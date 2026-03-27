@@ -2,7 +2,7 @@
 const CACHE_NAME = 'saltsurf-hr-v1';
 const ASSETS_TO_CACHE = [
   './',
-  './SaltSurf_HR_Portal.html',
+  './index.html',
   './manifest.json',
   './logo_login.png',
   './logo_sidebar.png',
@@ -59,7 +59,7 @@ self.addEventListener('fetch', function(event) {
         return response;
       }).catch(function() {
         return caches.match(request).then(function(cached) {
-          return cached || caches.match('./SaltSurf_HR_Portal.html');
+          return cached || caches.match('./index.html');
         });
       })
     );
