@@ -1,0 +1,2865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Salt Surf HR Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <!-- PWA Support -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#003764">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Salt Surf HR">
+  <link rel="apple-touch-icon" href="icon-152.png">
+  <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+  <!-- No external icon library needed - using Unicode symbols -->
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', 'Sarabun', -apple-system, BlinkMacSystemFont, sans-serif; background-color: #F7F8FA; color: #2D3748; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+
+    /* ===== AUTH PAGES (Login / Signup) ===== */
+    .auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(160deg, #002A4E 0%, #003764 40%, #0B4F7A 100%); position: relative; }
+    .auth-page::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 30% 20%, rgba(255,108,55,0.08) 0%, transparent 60%); pointer-events: none; }
+    .lang-switcher-top { position: absolute; top: 24px; right: 32px; display: flex; gap: 8px; z-index: 10; }
+    .lang-btn { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.85); border: 1px solid rgba(255,255,255,0.25); padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s ease; letter-spacing: 0.3px; backdrop-filter: blur(4px); }
+    .lang-btn:hover { background: rgba(255,255,255,0.2); color: white; }
+    .lang-btn.active { background: #FF6C37; border-color: #FF6C37; color: white; }
+    .auth-card { background: white; border-radius: 16px; padding: 44px 40px; width: 100%; max-width: 420px; box-shadow: 0 24px 64px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.08); position: relative; }
+    .auth-card h1 { color: #003764; font-size: 22px; font-weight: 700; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .auth-card .subtitle { color: #8896A6; font-size: 14px; margin-bottom: 32px; font-weight: 400; }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-weight: 500; color: #4A5568; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.2px; }
+    .required-star { color: #E53E3E; font-weight: 600; margin-left: 2px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; border: 1.5px solid #E2E8F0; border-radius: 10px; font-family: inherit; font-size: 14px; color: #2D3748; background: #FAFBFC; transition: all 0.2s ease; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #FF6C37; box-shadow: 0 0 0 3px rgba(255,108,55,0.08); background: white; }
+    .form-group input::placeholder { color: #A0AEC0; font-weight: 400; }
+    .btn { padding: 11px 24px; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; transition: all 0.2s ease; font-family: inherit; letter-spacing: 0.2px; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #FF6C37; color: white; width: 100%; margin-top: 8px; }
+    .btn-primary:hover { background: #E85D2A; box-shadow: 0 4px 12px rgba(255,108,55,0.3); }
+    .btn-secondary { background: #EDF2F7; color: #4A5568; }
+    .btn-secondary:hover { background: #E2E8F0; }
+    .auth-links { text-align: center; margin-top: 24px; font-size: 14px; color: #8896A6; }
+    .auth-links a { color: #FF6C37; text-decoration: none; cursor: pointer; font-weight: 600; }
+    .auth-links a:hover { text-decoration: underline; }
+    .demo-info { background: #F7F8FA; padding: 16px 18px; border-radius: 10px; margin-top: 24px; font-size: 12px; color: #718096; border: 1px solid #EDF2F7; }
+    .demo-info h4 { color: #003764; margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+    .demo-info p { margin-bottom: 2px; }
+
+    /* ===== APP LAYOUT ===== */
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+
+    /* ===== SIDEBAR ===== */
+    .sidebar { width: 250px; background: #002A4E; color: white; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.06); }
+    .sidebar-logo { padding: 22px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 700; }
+    .user-section { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: center; }
+    .user-avatar { width: 46px; height: 46px; background: linear-gradient(135deg, #FF6C37, #FF8F5E); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; margin: 0 auto 10px; box-shadow: 0 2px 8px rgba(255,108,55,0.3); }
+    .user-name { font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.95); }
+    .user-role { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 500; }
+    .nav-list { flex: 1; padding: 12px 0; list-style: none; }
+    .nav-link { display: flex; align-items: center; padding: 11px 22px; color: rgba(255,255,255,0.6); cursor: pointer; transition: all 0.2s ease; font-size: 13.5px; font-weight: 500; border-left: 3px solid transparent; margin: 1px 0; }
+    .nav-link:hover { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.9); }
+    .nav-link.active { background: rgba(255,108,55,0.1); color: white; border-left-color: #FF6C37; }
+    .logout-btn { padding: 14px 22px; border: none; background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.5); cursor: pointer; width: 100%; display: flex; align-items: center; font-size: 13px; font-weight: 500; border-top: 1px solid rgba(255,255,255,0.08); transition: all 0.2s ease; font-family: inherit; }
+    .logout-btn:hover { background: rgba(231,76,60,0.12); color: #ff9999; }
+
+    /* ===== HEADER ===== */
+    .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: #F7F8FA; }
+    .header { background: white; padding: 18px 32px; border-bottom: 1px solid #EDF2F7; display: flex; justify-content: space-between; align-items: center; }
+    .header-left h2 { color: #1A365D; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; }
+    .header-right { display: flex; align-items: center; gap: 16px; }
+    .header-actions { display: flex; gap: 6px; align-items: center; }
+    .header-btn { background: #EDF2F7; border: 1px solid #E2E8F0; color: #4A5568; cursor: pointer; font-size: 12px; padding: 5px 12px; border-radius: 6px; font-weight: 500; transition: all 0.2s ease; }
+    .header-btn:hover { background: #E2E8F0; }
+    .header-btn.active { background: #FF6C37; color: white; border-color: #FF6C37; }
+
+    /* ===== CONTENT AREA ===== */
+    .content-area { flex: 1; overflow-y: auto; padding: 28px 32px; background: #F7F8FA; }
+    #content { animation: fadeIn 0.25s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ===== CARDS ===== */
+    .card { background: white; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); border: 1px solid #EDF2F7; }
+    .card h3 { color: #1A365D; margin-bottom: 16px; font-size: 15px; font-weight: 600; }
+
+    /* ===== STATS ===== */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: white; border-radius: 12px; padding: 22px 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); text-align: center; border: 1px solid #EDF2F7; border-top: 3px solid #FF6C37; transition: box-shadow 0.2s ease; }
+    .stat-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+    .stat-number { font-size: 30px; font-weight: 700; color: #1A365D; margin-bottom: 4px; letter-spacing: -0.5px; }
+    .stat-label { color: #8896A6; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ===== TABLES ===== */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table th { background: #F7F8FA; color: #4A5568; padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 2px solid #E2E8F0; }
+    table td { padding: 11px 14px; border-bottom: 1px solid #F0F3F7; color: #4A5568; }
+    table tbody tr:hover { background: #FAFBFC; }
+    table tbody tr:nth-child(even) { background: #FCFCFD; }
+    table tbody tr:nth-child(even):hover { background: #F5F7FA; }
+
+    /* ===== BADGES ===== */
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.2px; }
+    .badge-pending { background: #FEF3CD; color: #B7791F; }
+    .badge-approved { background: #C6F6D5; color: #276749; }
+    .badge-rejected { background: #FED7D7; color: #C53030; }
+    .badge-late { background: #FED7D7; color: #C53030; }
+    .badge-ontime { background: #C6F6D5; color: #276749; }
+    .badge-dayoff { background: #E2E8F0; color: #718096; }
+    .badge-ot { background: #BEE3F8; color: #2B6CB0; }
+    .badge-lateot { background: #FEEBC8; color: #C05621; }
+    .badge-dayoffscan { background: #E9D8FD; color: #6B46C1; }
+
+    /* ===== MODALS ===== */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,20,40,0.45); backdrop-filter: blur(2px); z-index: 1000; }
+    .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border-radius: 16px; padding: 32px; max-width: 520px; width: 92%; max-height: 88vh; overflow-y: auto; z-index: 1001; box-shadow: 0 24px 64px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.08); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #EDF2F7; padding-bottom: 16px; }
+    .modal-header h3 { color: #1A365D; font-size: 17px; font-weight: 700; }
+    .modal-close { background: #F7F8FA; border: none; color: #8896A6; cursor: pointer; font-size: 20px; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all 0.2s ease; }
+    .modal-close:hover { background: #EDF2F7; color: #4A5568; }
+    .modal-body { padding: 4px 0; }
+    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 8px; }
+
+    /* ===== TOASTS ===== */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 2000; }
+    .toast { background: white; padding: 14px 18px; border-radius: 10px; margin-bottom: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.1); display: flex; align-items: center; gap: 10px; min-width: 280px; animation: slideInRight 0.3s ease-out; border: 1px solid #EDF2F7; }
+    @keyframes slideInRight { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast.success { border-left: 4px solid #48BB78; }
+    .toast.error { border-left: 4px solid #E53E3E; }
+
+    /* ===== BUTTONS ===== */
+    .btn-small { padding: 5px 12px; font-size: 12px; margin-right: 4px; border-radius: 8px; }
+    .btn-approve { background: #48BB78; color: white; }
+    .btn-approve:hover { background: #38A169; }
+    .btn-reject { background: #E53E3E; color: white; }
+    .btn-reject:hover { background: #C53030; }
+    .btn-danger { background: #E53E3E; color: white; }
+    .btn-danger:hover { background: #C53030; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-group .btn { flex: 1; min-width: 120px; }
+    .mb-20 { margin-bottom: 20px; }
+    progress { width: 100%; height: 5px; border-radius: 3px; margin-top: 6px; appearance: none; -webkit-appearance: none; }
+    progress::-webkit-progress-bar { background: #EDF2F7; border-radius: 3px; }
+    progress::-webkit-progress-value { background: #FF6C37; border-radius: 3px; }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #CBD5E0; border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: #A0AEC0; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); }
+    .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.25); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .app-container { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; max-height: 60px; flex-direction: row; }
+      .nav-list { display: flex; padding: 0; flex: 1; }
+      .stats-grid { grid-template-columns: 1fr; }
+      .content-area { padding: 20px 16px; }
+      .header { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- LOGIN PAGE -->
+  <div id="loginPage" style="display:block">
+    <div class="auth-page">
+      <div class="lang-switcher-top">
+        <button class="lang-btn active" onclick="setLanguage('th', this)">ไทย</button>
+        <button class="lang-btn" onclick="setLanguage('en', this)">EN</button>
+        <button class="lang-btn" onclick="setLanguage('my', this)">MY</button>
+      </div>
+      <div class="auth-card">
+        <div style="text-align:center; margin-bottom:32px;">
+          <img src="logo_login.png" alt="Salt Surf" style="width:88px; height:88px; margin:0 auto 16px; display:block; border-radius:50%; box-shadow: 0 4px 16px rgba(0,55,100,0.12);">
+          <h1>SALT SURF</h1>
+          <div class="subtitle" id="loginSubtitle">HR Management Portal</div>
+        </div>
+        <div>
+          <div class="form-group">
+            <label id="labelUsername">Username</label>
+            <input type="text" id="username" placeholder="e.g., md, hr, star">
+          </div>
+          <div class="form-group">
+            <label id="labelPassword">Password</label>
+            <input type="password" id="password" placeholder="e.g., md123" onkeydown="if(event.key==='Enter')doLogin()">
+          </div>
+          <button type="button" class="btn btn-primary" id="loginBtn" onclick="doLogin()">Login</button>
+        </div>
+        <div class="auth-links">
+          <p><span id="noAccountText">No account yet?</span> <a onclick="goToSignup()" style="cursor:pointer;" id="signupLinkText">Sign up</a></p>
+        </div>
+        <div class="demo-info">
+          <h4 id="demoTitle">Demo Accounts:</h4>
+          <p><strong id="demoMD">MD</strong>: md / md123</p>
+          <p><strong id="demoHR">HR</strong>: jubjang / pass123</p>
+          <p><strong id="demoDeptHead">Dept Head</strong>: diew / pass123</p>
+          <p><strong id="demoEmployee">Employee</strong>: itim / pass123</p>
+          <p><strong id="demoAdmin">Admin</strong>: admin / admin123</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNUP PAGE -->
+  <div id="signupPage" style="display:none">
+    <div class="auth-page">
+      <div class="auth-card">
+        <h1 id="signupTitle" style="text-align:center;color:#1A365D;margin-bottom:4px;">Create Account</h1>
+        <img src="logo_login.png" alt="Salt Surf" style="width:72px; height:72px; border-radius:50%; display:block; margin:0 auto 14px; box-shadow: 0 4px 16px rgba(0,55,100,0.12);">
+        <div class="subtitle" style="text-align:center;">Salt Surf HR Portal</div>
+        <div class="form-group"><label id="lblSignupEmpId">Employee ID</label><input type="text" id="signupEmpId" placeholder="e.g. 116811023"></div>
+        <div class="form-group"><label id="lblSignupName">Full Name <span class="required-star">*</span></label><input type="text" id="signupName" required></div>
+        <div class="form-group"><label id="lblSignupUsername">Username <span class="required-star">*</span></label><input type="text" id="signupUsername" required></div>
+        <div class="form-group"><label id="lblSignupPassword">Password <span class="required-star">*</span></label><input type="password" id="signupPassword" required></div>
+        <div class="form-group"><label id="lblSignupPhone">Phone <span class="required-star">*</span></label><input type="text" id="signupPhone" required></div>
+        <div class="form-group"><label id="lblSignupEmail">Email</label><input type="email" id="signupEmail"></div>
+        <div class="form-group"><label id="lblSignupDept">Department</label><select id="signupDept"></select></div>
+        <div class="form-group"><label id="lblSignupSection">Section</label><input type="text" id="signupSection" placeholder="e.g. Bakery, Bar, Service, Main Kitchen"></div>
+        <div class="form-group"><label id="lblSignupPos">Position</label><input type="text" id="signupPos"></div>
+        <div class="form-group"><label id="lblSignupAddress">Address</label><textarea id="signupAddress" rows="2"></textarea></div>
+        <div class="form-group"><label id="lblSignupLineId">LINE ID</label><input type="text" id="signupLineId"></div>
+        <div class="form-group"><label id="lblSignupBirthday">Birthday</label><input type="date" id="signupBirthday"></div>
+        <div class="form-group"><label id="lblSignupNationality">Nationality</label><select id="signupNationality"><option>Thai</option><option>Myanmar</option><option>Cambodian</option><option>Laos</option><option>Other</option></select></div>
+        <button class="btn btn-primary" onclick="doSignup()" id="signupBtn">Create Account</button>
+        <div class="auth-links"><p><a onclick="goToLogin()" style="cursor:pointer;" id="backToLoginLink">Back to Login</a></p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="mainApp" style="display:none" class="app-container">
+    <div class="sidebar">
+      <div class="sidebar-logo"><img src="logo_sidebar.png" alt="Salt Surf" style="width:48px; height:48px; border-radius:50%; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto; opacity:0.95;"><span style="font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.8);">SALT SURF</span></div>
+      <div class="user-section">
+        <div class="user-avatar">N</div>
+        <div class="user-name">Name</div>
+        <div class="user-role">Role</div>
+      </div>
+      <ul class="nav-list"></ul>
+      <button class="logout-btn" onclick="doLogout()">&#x2190; Logout</button>
+    </div>
+    <div class="main-content">
+      <div class="header">
+        <div class="header-left"><h2>Dashboard</h2></div>
+        <div class="header-right">
+          <div class="header-actions">
+            <button class="header-btn lang-btn" onclick="setLanguage('th', this)">TH</button>
+            <button class="header-btn lang-btn" onclick="setLanguage('en', this)">EN</button>
+            <button class="header-btn lang-btn" onclick="setLanguage('my', this)">MY</button>
+          </div>
+        </div>
+      </div>
+      <div class="content-area"><div id="content"></div></div>
+    </div>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay" onclick="if(event.target===this) closeModal()"></div>
+  <div id="modal" class="modal"></div>
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    // Make everything globally accessible
+    var APP = {
+      currentUser: null,
+      lang: 'th',
+      employees: [
+        { id:'admin', empId:'SS-000', fingerprintId:'', username:'admin', password:'admin123', name:'System Admin', dept:'IT', section:'IT', pos:'Administrator', role:'admin', phone:'0800000000', email:'admin@saltsurf.com', nationality:'Thai', birthday:'', address:'', lineId:'admin', nickname:'Admin', startDate:'', level:'' },
+        { id:'md', empId:'SS-MD', fingerprintId:'', username:'md', password:'md123', name:'MD Salt Surf', dept:'Management', section:'Management', pos:'Managing Director', role:'md', phone:'', email:'md@saltsurf.com', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'MD', startDate:'', level:'' },
+        { id:'e01', empId:'10004', fingerprintId:'10004', username:'maaye', password:'pass123', name:'Me Aye', dept:'Kitchen', section:'Bakery', pos:'Commis I', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'มะแอ้', startDate:'2022-07-01', level:'P3' },
+        { id:'e02', empId:'10005', fingerprintId:'10005', username:'itim', password:'pass123', name:'ชไมพร โหยบทรัพย์', dept:'Restaurant Operation', section:'Operation', pos:'Shop Attendance', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ไอติม', startDate:'2023-02-14', level:'P3' },
+        { id:'e03', empId:'10008', fingerprintId:'10008', username:'amy', password:'pass123', name:'Ni Ni Win Shwe', dept:'Kitchen', section:'Main Kitchen', pos:'Demi Chef de Partie', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'เอมี่', startDate:'2024-02-13', level:'P4' },
+        { id:'e04', empId:'10011', fingerprintId:'10011', username:'re', password:'pass123', name:'Ms.Shone Let Win', dept:'Restaurant Operation', section:'Service', pos:'Asst.Captain Cashier', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'เร', startDate:'2024-08-13', level:'P4' },
+        { id:'e05', empId:'110668004', fingerprintId:'110668004', username:'sakon', password:'pass123', name:'สกล แพงหอม', dept:'Restaurant Operation', section:'Operation', pos:'Instructor', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'สกล', startDate:'2025-05-12', level:'P5' },
+        { id:'e06', empId:'116809002', fingerprintId:'116809002', username:'tum', password:'pass123', name:'เอกพันธ์ ช่วยเรือง', dept:'Public Area', section:'Operation', pos:'Cleaner', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ตั้ม', startDate:'2025-09-10', level:'P2' },
+        { id:'e07', empId:'116809004', fingerprintId:'116809004', username:'oh', password:'pass123', name:'วุฒิพงษ์ วงศ์จำปา', dept:'Human Resource', section:'Operation', pos:'Security', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'โอ้', startDate:'2025-09-11', level:'P2' },
+        { id:'e08', empId:'116810001', fingerprintId:'116810001', username:'kratae', password:'pass123', name:'อัจฉรา ปานชุม', dept:'Restaurant Operation', section:'Bar', pos:'Barista Supervisor', role:'depthead', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'กระแต', startDate:'2025-10-01', level:'P5' },
+        { id:'e09', empId:'116810002', fingerprintId:'116810002', username:'mint', password:'pass123', name:'จิรวรรณ มูมีพรม', dept:'Restaurant Operation', section:'Service', pos:'Waitress', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'มิ้นท์', startDate:'2025-10-07', level:'P3' },
+        { id:'e10', empId:'116808010', fingerprintId:'116808010', username:'pla', password:'pass123', name:'Tin Mar Lain', dept:'Restaurant Operation', section:'Service', pos:'Waitress', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'ปลา', startDate:'2025-10-15', level:'P3' },
+        { id:'e11', empId:'116811002', fingerprintId:'116811002', username:'lin', password:'pass123', name:'Lin Chit oo', dept:'Restaurant Operation', section:'Bar', pos:'Bartender', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'ลิน', startDate:'2025-11-09', level:'P3' },
+        { id:'e12', empId:'116810003', fingerprintId:'116810003', username:'got', password:'pass123', name:'ธนภัทร ยอดสุวรรณ', dept:'Restaurant Operation', section:'Bar', pos:'Bartender', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ก๊อต', startDate:'2025-11-10', level:'P3' },
+        { id:'e13', empId:'116810004', fingerprintId:'116810004', username:'dao', password:'pass123', name:'ศศิวิมล เทนสิทธิ์', dept:'Kitchen', section:'Bakery', pos:'Demi Chef de Partie', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ดาว', startDate:'2025-11-16', level:'P4' },
+        { id:'e14', empId:'116811005', fingerprintId:'116811005', username:'diew', password:'pass123', name:'เดียว รักเรือน', dept:'Kitchen', section:'Main Kitchen', pos:'Sous Chef', role:'depthead', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'เดียว', startDate:'2025-11-18', level:'P7' },
+        { id:'hr1', empId:'116811007', fingerprintId:'116811007', username:'jubjang', password:'pass123', name:'สุดาพร นำพา', dept:'Human Resource', section:'HRM', pos:'HR Supervisor', role:'hr', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'จุ๊บแจง', startDate:'2025-11-21', level:'P5' },
+        { id:'e16', empId:'116811009', fingerprintId:'116811009', username:'ying', password:'pass123', name:'Nyein Tain Phyu', dept:'Public Area', section:'Operation', pos:'Cleaner', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'หญิง', startDate:'2025-12-04', level:'P2' },
+        { id:'e17', empId:'116811010', fingerprintId:'116811010', username:'suay', password:'pass123', name:'Di Hlaing Moe', dept:'Kitchen', section:'Bakery', pos:'Commis II', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'สวย', startDate:'2025-12-01', level:'P2' },
+        { id:'e18', empId:'116811013', fingerprintId:'116811013', username:'diana', password:'pass123', name:'เรณุกา ขาวเชื้อ', dept:'Kitchen', section:'Main Kitchen', pos:'Commis III', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ไดอาน่า', startDate:'2025-12-27', level:'P2' },
+        { id:'e19', empId:'116811014', fingerprintId:'116811014', username:'pond', password:'pass123', name:'อาซัน หีมโต๊ะเต๊ะ', dept:'Kitchen', section:'Main Kitchen', pos:'Commis II', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ปอนด์', startDate:'2025-12-28', level:'P2' },
+        { id:'e20', empId:'116811017', fingerprintId:'116811017', username:'uey', password:'pass123', name:'พัชณ์ศมณ ชมญ์ปณัฎฐ์', dept:'Restaurant Operation', section:'Operation', pos:'Operation Manager', role:'depthead', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'อุ๋ย', startDate:'2026-02-06', level:'P7' },
+        { id:'e21', empId:'116811018', fingerprintId:'116811018', username:'pond2', password:'pass123', name:'สรัญวุฐิ ทองใหญ่', dept:'Public Area', section:'Operation', pos:'Gardener', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'ปอนด์', startDate:'2026-01-28', level:'P2' },
+        { id:'e22', empId:'116811019', fingerprintId:'116811019', username:'toulak', password:'pass123', name:'Tro Win Lee', dept:'Restaurant Operation', section:'Service', pos:'Waiter', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'Toulak', startDate:'2026-02-24', level:'P2' },
+        { id:'e23', empId:'116811020', fingerprintId:'116811020', username:'su', password:'pass123', name:'สุณิษา สุวิสัน', dept:'Kitchen', section:'Bakery', pos:'Commis II', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'สุ', startDate:'2026-02-27', level:'P2' },
+        { id:'e24', empId:'116811021', fingerprintId:'116811021', username:'and', password:'pass123', name:'ศิษฎา ประทีป ณ ถลาง', dept:'Restaurant Operation', section:'Bar', pos:'Barista', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'แอนด์', startDate:'2026-03-06', level:'P2' },
+        { id:'e25', empId:'116811022', fingerprintId:'116811022', username:'ae', password:'pass123', name:'Aye Htwe', dept:'Kitchen', section:'Main Kitchen', pos:'Steward', role:'employee', phone:'', email:'', nationality:'Myanmar', birthday:'', address:'', lineId:'', nickname:'เอ้', startDate:'2026-03-02', level:'P2' },
+        { id:'e26', empId:'116811023', fingerprintId:'116811023', username:'milli', password:'pass123', name:'ลาลิตา จงเกียรติขจร', dept:'Restaurant Operation', section:'Service', pos:'Waitress', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'มิลลิ', startDate:'2026-03-17', level:'P2' },
+        { id:'e27', empId:'PT-001', fingerprintId:'', username:'earn', password:'pass123', name:'สุภาวดี พูนคำ', dept:'Restaurant Operation', section:'Service', pos:'Food Runner', role:'employee', phone:'', email:'', nationality:'Thai', birthday:'', address:'', lineId:'', nickname:'เอิร์น', startDate:'2026-03-09', level:'Part Time' }
+      ],
+      departments: ['Kitchen', 'Restaurant Operation', 'Public Area', 'Human Resource', 'Management'],
+      leaves: [],
+      ots: [],
+      schedules: [],
+      logs: [],
+      attendance: [],
+      announcements: [],
+      pendingSchedules: [],
+      backOfficeContacts: [],
+      holidays: [
+        { date:'2026-01-01', name:'New Year Day' },
+        { date:'2026-02-02', name:'Makha Bucha' },
+        { date:'2026-03-06', name:'Makha Bucha (observed)' },
+        { date:'2026-04-06', name:'Chakri Memorial Day' },
+        { date:'2026-04-13', name:'Songkran Festival' },
+        { date:'2026-04-14', name:'Songkran Festival' },
+        { date:'2026-04-15', name:'Songkran Festival' },
+        { date:'2026-05-01', name:'Labor Day' },
+        { date:'2026-05-22', name:'Visakha Bucha' },
+        { date:'2026-07-28', name:'King Vajiralongkorn\'s Birthday' },
+        { date:'2026-07-29', name:'King\'s Birthday (observed)' },
+        { date:'2026-08-12', name:'Queen Suthida\'s Birthday' },
+        { date:'2026-10-13', name:'King Bhumibol Memorial Day' },
+        { date:'2026-10-14', name:'King\'s Memorial (observed)' },
+        { date:'2026-12-05', name:'King Bhumibol\'s Birthday' },
+        { date:'2026-12-10', name:'Constitution Day' },
+        { date:'2026-12-31', name:'New Year\'s Eve' }
+      ]
+    };
+
+    function initApp() {
+      // Attendance is now populated via file upload, start empty
+      APP.attendance = [];
+      renderLoginPage();
+      renderSignupPage();
+    }
+
+    var T = {
+      th: {
+        loginTitle: 'ระบบบริหารงานบุคคล', loginUsername: 'ชื่อผู้ใช้', loginPassword: 'รหัสผ่าน', loginBtn: 'เข้าสู่ระบบ', noAccount: 'ยังไม่มีบัญชี?', signupLink: 'สร้างบัญชี', demoTitle: 'บัญชีทดลอง:', demoMD: 'ผู้บริหาร', demoHR: 'ฝ่ายบุคคล', demoDeptHead: 'หัวหน้าแผนก', demoEmployee: 'พนักงาน', demoAdmin: 'แอดมิน',
+        announcements: 'บอร์ดประกาศ', newAnnouncement: 'ประกาศใหม่', announcementTitle: 'หัวข้อ', announcementBody: 'รายละเอียด', postedBy: 'โดย', noAnnouncements: 'ไม่มีประกาศ', pinned: 'ปักหมุด', deleteAnnouncement: 'ลบประกาศ', pendingScheduleChanges: 'คำขอเปลี่ยนตารางงาน', scheduleChangeFrom: 'เปลี่ยนจาก', scheduleChangeTo: 'เป็น', requestedBy: 'ขอโดย', pendingApproval: 'รออนุมัติ', attachPhotos: 'แนบรูปภาพ', photos: 'รูปภาพ', viewPhotos: 'ดูรูปภาพ', downloadPhoto: 'ดาวน์โหลด', evidence: 'หลักฐาน', noPhotos: 'ไม่มีรูปภาพ', startDate: 'วันที่เริ่ม', endDate: 'วันที่สิ้นสุด', startTime: 'เวลาเริ่ม', endTime: 'เวลาสิ้นสุด', duration: 'ระยะเวลา', fullDay: 'เต็มวัน', hourly: 'เป็นชั่วโมง', leaveMode: 'รูปแบบการลา',
+        dashboard: 'แดชบอร์ด', leaveRequest: 'ใบลา', otRequest: 'ขอทำ OT', schedule: 'ตารางงาน', loginSuccess: 'เข้าสู่ระบบสำเร็จ', loginError: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง', leaveSubmitted: 'ส่งใบลาเรียบร้อย', welcome: 'สวัสดี', used: 'ใช้ไปแล้ว', days: 'วัน', remaining: 'คงเหลือ', hours: 'ชั่วโมง', minutes: 'นาที', leaveBalance: 'สิทธิ์การลา', sickLeave: 'ลาป่วย', personalLeave: 'ลากิจ', annualLeave: 'ลาพักร้อน', recentRequests: 'คำขอล่าสุด', leaveHistory: 'ประวัติการลา', submit: 'ส่งคำขอ', cancel: 'ยกเลิก', approve: 'อนุมัติ', reject: 'ไม่อนุมัติ', pending: 'รอดำเนินการ', approved: 'อนุมัติแล้ว', rejected: 'ไม่อนุมัติ', date: 'วันที่', type: 'ประเภท', reason: 'เหตุผล', status: 'สถานะ', action: 'ดำเนินการ', logout: 'ออกจากระบบ', signup: 'สร้างบัญชี',
+        approvals: 'อนุมัติ', dayoff: 'วันหยุด', mySchedule: 'ตารางงานของฉัน', publicHolidays: 'วันหยุดราชการ', deptApprovals: 'อนุมัติแผนก', allLeaveRequests: 'คำขออนุมัติใบลาทั้งหมด', allOTRequests: 'คำขอ OT ทั้งหมด', scheduleManagement: 'การจัดตารางงาน', employeeManagement: 'จัดการพนักงาน', attendance: 'บันทึกเข้า-ออก', reports: 'รายงาน', activityLog: 'บันทึกกิจกรรม', newLeaveRequest: 'ใบลาใหม่', newOTRequest: 'ขอ OT ใหม่', prevWeek: 'สัปดาห์ก่อนหน้า', nextWeek: 'สัปดาห์ถัดไป', mon: 'จันทร์', tue: 'อังคาร', wed: 'พุธ', thu: 'พฤหัสบดี', fri: 'ศุกร์', sat: 'เสาร์', sun: 'อาทิตย์', employee: 'พนักงาน', department: 'แผนก', position: 'ตำแหน่ง', phone: 'โทรศัพท์', role: 'บทบาท', edit: 'แก้ไข', delete: 'ลบ', confirmDelete: 'คุณแน่ใจหรือว่าต้องการลบ', checkIn: 'เข้า', status: 'สถานะ', late: 'สาย', ontime: 'ตรงเวลา', downloadCSV: 'ดาวน์โหลด CSV', noData: 'ไม่มีข้อมูล', uploadAttendance: 'อัพโหลดไฟล์ลงเวลา', attendanceUploaded: 'อัพโหลดข้อมูลลงเวลาแล้ว', lateToday: 'มาสายวันนี้', lateBy: 'สายเท่าไหร่', shift: 'กะ', shiftTime: 'เวลากะ', scheduled: 'กำหนด', lateThisMonth: 'สายเดือนนี้', timesLate: 'ครั้ง', myProfile: 'ข้อมูลส่วนตัว', editProfile: 'แก้ไขข้อมูล', profileUpdated: 'อัพเดตข้อมูลเรียบร้อย', profilePicture: 'รูปโปรไฟล์', uploadPhoto: 'อัพโหลดรูป', removePhoto: 'ลบรูป', contacts: 'สมุดรายชื่อ', employeeDirectory: 'รายชื่อพนักงาน', backOfficeTeam: 'ทีม Back Office', addBackOfficeContact: 'เพิ่มรายชื่อ Back Office', contactName: 'ชื่อ', contactRole: 'ตำแหน่ง/หน้าที่', contactLineId: 'LINE ID', contactPhone: 'เบอร์โทร', contactEmail: 'อีเมล', contactNotes: 'หมายเหตุ',
+        birthday: 'วันเกิด', address: 'ที่อยู่', nationality: 'สัญชาติ', email: 'อีเมล', nickname: 'ชื่อเล่น', requestLeave: 'ขอลา', from: 'จาก', to: 'ถึง', search: 'ค้นหา', all: 'ทั้งหมด', checkOut: 'ออก', recalcSchedule: 'คำนวณจากตาราง', attendanceNote: 'สถานะเชื่อมโยงกับการจัดตารางงานและ OT ที่อนุมัติ กะที่มีเครื่องหมาย * ใช้ค่าเริ่มต้น (กะ A วันจันทร์-ศุกร์) ตั้งค่าตารางและอนุมัติ OT ก่อน แล้วคลิกคำนวณจากตาราง', records: 'รายการ', allEmployeesReport: 'รายงานพนักงานทั้งหมด (CSV)', individualReport: 'รายงานรายบุคคล (CSV)', lateSummary: 'สรุปการมาสาย (CSV)', offDayScanTitle: 'สแกนในวันหยุดที่กำหนด — ไม่มี OT ที่อนุมัติ', offDayScanNote: 'พนักงานต่อไปนี้สแกนเข้าในวันหยุด กรุณาตรวจสอบว่าได้อนุมัติ OT หรือไม่', leaveRequests: 'คำขอลา', otRequestsLabel: 'คำขอ OT', leaveRequestsPending: 'คำขอลารอดำเนินการ', otRequestsPending: 'คำขอ OT รอดำเนินการ', time: 'เวลา', unknown: 'ไม่ทราบ', onlyHRMDApprove: 'เฉพาะ HR/MD เท่านั้นที่อนุมัติได้', onlyHRMDReject: 'เฉพาะ HR/MD เท่านั้นที่ปฏิเสธได้', adminNoApproval: 'แอดมินไม่มีสิทธิ์อนุมัติ', adminNoSchedule: 'แอดมินไม่มีสิทธิ์จัดตารางงาน', searchIdNameNickname: 'ค้นหา (รหัส / ชื่อ / ชื่อเล่น)', fingerprint: 'ลายนิ้วมือ', level: 'ระดับ', empStartDate: 'วันเริ่มงาน', employeeId: 'รหัสพนักงาน', fingerprintId: 'รหัสลายนิ้วมือ', username: 'ชื่อผู้ใช้', passwordField: 'รหัสผ่าน', fullName: 'ชื่อ-นามสกุล', section: 'แผนกย่อย', sectionPlaceholder: 'เช่น Bakery, Bar, Service', employeeDeleted: 'ลบพนักงานแล้ว', employeeUpdated: 'อัพเดตข้อมูลพนักงานแล้ว', addEmployee: 'เพิ่มพนักงาน', deptHead: 'หัวหน้าแผนก', admin: 'แอดมิน', hr: 'ฝ่ายบุคคล', md: 'ผู้บริหาร', leaveReportCSV: 'รายงานการลา (CSV)', otReportCSV: 'รายงาน OT (CSV)', attendanceReportCSV: 'รายงานการเข้างาน (CSV)', weeklyScheduleCSV: 'ตารางงานรายสัปดาห์ (CSV)', activityLogCSV: 'บันทึกกิจกรรม (CSV)', total: 'รวม', retentionPolicy: 'นโยบายเก็บข้อมูล: ขั้นต่ำ 30 วัน', timestamp: 'เวลา', user: 'ผู้ใช้', detail: 'รายละเอียด', searchContacts: 'ค้นหาด้วย รหัส, ชื่อ, ชื่อเล่น, แผนก...', contactUpdated: 'อัพเดตข้อมูลติดต่อแล้ว', contactAdded: 'เพิ่มข้อมูลติดต่อแล้ว', contactDeleted: 'ลบข้อมูลติดต่อแล้ว', allSections: '-- ทุกแผนก --', allEmployeesOption: '-- พนักงานทั้งหมด --', clickToChangeShift: 'คลิกที่ช่องเพื่อเปลี่ยนกะ', selectShift: 'เลือกกะ', overall: 'ทั้งหมด', scheduleDownloaded: 'ดาวน์โหลดตารางงานแล้ว', noEmployeeSelected: 'ไม่ได้เลือกพนักงาน', downloadSchedule: 'ดาวน์โหลดตารางงาน', pleaseFillAll: 'กรุณากรอกข้อมูลให้ครบ', endAfterStart: 'วันที่สิ้นสุดต้องหลังวันที่เริ่ม', endTimeAfterStart: 'เวลาสิ้นสุดต้องหลังเวลาเริ่ม', otSubmitted: 'ส่งคำขอ OT แล้ว', deletedMsg: 'ลบแล้ว', noLeaveData: 'ไม่มีข้อมูลการลาในช่วงที่เลือก', noOTData: 'ไม่มีข้อมูล OT ในช่วงที่เลือก', selectEmployeeFirst: 'กรุณาเลือกพนักงานก่อน', noAttendanceData: 'ไม่มีข้อมูลเข้างานในช่วงที่เลือก', nameUsernameRequired: 'ต้องกรอกชื่อและชื่อผู้ใช้', newRequest: 'คำขอใหม่', idSlashName: 'รหัส / ชื่อ', employees: 'พนักงาน', manageDepartments: 'จัดการแผนก', addDepartment: 'เพิ่มแผนก', editDepartment: 'แก้ไขแผนก', deleteDepartment: 'ลบแผนก', deptName: 'ชื่อแผนก', deptAdded: 'เพิ่มแผนกแล้ว', deptUpdated: 'อัพเดตแผนกแล้ว', deptDeleted: 'ลบแผนกแล้ว', deptInUse: 'ไม่สามารถลบแผนกนี้ได้ มีพนักงานอยู่ในแผนก', deptExists: 'ชื่อแผนกนี้มีอยู่แล้ว', enterDeptName: 'กรุณาใส่ชื่อแผนก', lineId: 'LINE ID', createAccount: 'สร้างบัญชี', backToLogin: 'กลับไปหน้าเข้าสู่ระบบ', pleaseFillRequired: 'กรุณากรอกข้อมูลที่จำเป็น', empIdExists: 'รหัสพนักงานนี้มีอยู่แล้ว', accountCreated: 'สร้างบัญชีสำเร็จ', readingFile: 'กำลังอ่านไฟล์', errorReadingFile: 'เกิดข้อผิดพลาดในการอ่านไฟล์', loadingExcelParser: 'กำลังโหลดตัวแปลง Excel...', excelParserLoaded: 'โหลดตัวแปลงสำเร็จ กำลังประมวลผล...', excelParserError: 'โหลดตัวแปลง Excel ไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต', errorParsingFile: 'เกิดข้อผิดพลาดในการแยกวิเคราะห์ไฟล์'
+      },
+      en: {
+        loginTitle: 'HR Management Portal', loginUsername: 'Username', loginPassword: 'Password', loginBtn: 'Login', noAccount: 'No account yet?', signupLink: 'Sign up', demoTitle: 'Demo Accounts:', demoMD: 'MD', demoHR: 'HR', demoDeptHead: 'Dept Head', demoEmployee: 'Employee', demoAdmin: 'Admin',
+        announcements: 'Notification Board', newAnnouncement: 'New Announcement', announcementTitle: 'Title', announcementBody: 'Details', postedBy: 'By', noAnnouncements: 'No announcements', pinned: 'Pinned', deleteAnnouncement: 'Delete', pendingScheduleChanges: 'Schedule Change Requests', scheduleChangeFrom: 'From', scheduleChangeTo: 'To', requestedBy: 'Requested by', pendingApproval: 'Pending Approval', attachPhotos: 'Attach Photos', photos: 'Photos', viewPhotos: 'View Photos', downloadPhoto: 'Download', evidence: 'Evidence', noPhotos: 'No photos', startDate: 'Start Date', endDate: 'End Date', startTime: 'Start Time', endTime: 'End Time', duration: 'Duration', fullDay: 'Full Day(s)', hourly: 'Hourly', leaveMode: 'Leave Mode',
+        dashboard: 'Dashboard', leaveRequest: 'Leave Request', otRequest: 'OT Request', schedule: 'Schedule', loginSuccess: 'Login successful', loginError: 'Invalid username or password', leaveSubmitted: 'Leave request submitted', welcome: 'Hello', used: 'Used', days: 'days', remaining: 'Remaining', hours: 'hours', minutes: 'minutes', leaveBalance: 'Leave Balance', sickLeave: 'Sick Leave', personalLeave: 'Personal Leave', annualLeave: 'Annual Leave', recentRequests: 'Recent Requests', leaveHistory: 'Leave History', submit: 'Submit', cancel: 'Cancel', approve: 'Approve', reject: 'Reject', pending: 'Pending', approved: 'Approved', rejected: 'Rejected', date: 'Date', type: 'Type', reason: 'Reason', status: 'Status', action: 'Action', logout: 'Logout', signup: 'Sign Up',
+        approvals: 'Approvals', dayoff: 'Day Off', mySchedule: 'My Schedule', publicHolidays: 'Public Holidays', deptApprovals: 'Dept Approvals', allLeaveRequests: 'All Leave Requests', allOTRequests: 'All OT Requests', scheduleManagement: 'Schedule Management', employeeManagement: 'Employee Management', attendance: 'Attendance', reports: 'Reports', activityLog: 'Activity Log', newLeaveRequest: 'New Leave Request', newOTRequest: 'New OT Request', prevWeek: 'Previous Week', nextWeek: 'Next Week', mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday', employee: 'Employee', department: 'Department', position: 'Position', phone: 'Phone', role: 'Role', edit: 'Edit', delete: 'Delete', confirmDelete: 'Are you sure you want to delete?', checkIn: 'Check-in', status: 'Status', late: 'Late', ontime: 'On-time', downloadCSV: 'Download CSV', noData: 'No data', uploadAttendance: 'Upload Attendance', attendanceUploaded: 'Attendance data uploaded', lateToday: 'Late Today', lateBy: 'Late By', shift: 'Shift', shiftTime: 'Shift Time', scheduled: 'Scheduled', lateThisMonth: 'Late This Month', timesLate: 'times', myProfile: 'My Profile', editProfile: 'Edit Profile', profileUpdated: 'Profile updated', profilePicture: 'Profile Picture', uploadPhoto: 'Upload Photo', removePhoto: 'Remove Photo', contacts: 'Contacts', employeeDirectory: 'Employee Directory', backOfficeTeam: 'Back Office Team', addBackOfficeContact: 'Add Back Office Contact', contactName: 'Name', contactRole: 'Role / Title', contactLineId: 'LINE ID', contactPhone: 'Phone', contactEmail: 'Email', contactNotes: 'Notes',
+        birthday: 'Birthday', address: 'Address', nationality: 'Nationality', email: 'Email', nickname: 'Nickname', requestLeave: 'Request Leave', from: 'From', to: 'To', search: 'Search', all: 'All', checkOut: 'Check-out', recalcSchedule: 'Recalc from Schedule', attendanceNote: 'Status is linked to Schedule Management and Approved OT. Shifts marked with * use default (Shift A weekdays). Set schedules and approve OT first, then click Recalc from Schedule.', records: 'records', allEmployeesReport: 'All Employees Report (CSV)', individualReport: 'Individual Report (CSV)', lateSummary: 'Late Summary (CSV)', offDayScanTitle: 'Scanned on Scheduled OFF Day — No Approved OT', offDayScanNote: 'The following employees scanned in on their scheduled OFF day. Please verify if OT was authorized.', leaveRequests: 'Leave Requests', otRequestsLabel: 'OT Requests', leaveRequestsPending: 'Leave Requests Pending', otRequestsPending: 'OT Requests Pending', time: 'Time', unknown: 'Unknown', onlyHRMDApprove: 'Only HR/MD can approve requests', onlyHRMDReject: 'Only HR/MD can reject requests', adminNoApproval: 'Admin does not have approval access', adminNoSchedule: 'Admin does not have schedule management access', searchIdNameNickname: 'Search (ID / Name / Nickname)', fingerprint: 'Fingerprint', level: 'Level', empStartDate: 'Start Date', employeeId: 'Employee ID', fingerprintId: 'Fingerprint ID', username: 'Username', passwordField: 'Password', fullName: 'Full Name', section: 'Section', sectionPlaceholder: 'e.g. Bakery, Bar, Service', employeeDeleted: 'Employee deleted', employeeUpdated: 'Employee updated', addEmployee: 'Add Employee', deptHead: 'Dept Head', admin: 'Admin', hr: 'HR', md: 'MD', leaveReportCSV: 'Leave Report (CSV)', otReportCSV: 'OT Report (CSV)', attendanceReportCSV: 'Attendance Report (CSV)', weeklyScheduleCSV: 'Weekly Schedule (CSV)', activityLogCSV: 'Activity Log (CSV)', total: 'Total', retentionPolicy: 'Retention policy: minimum 30 days', timestamp: 'Timestamp', user: 'User', detail: 'Detail', searchContacts: 'Search by ID, name, nickname, department...', contactUpdated: 'Contact updated', contactAdded: 'Contact added', contactDeleted: 'Contact deleted', allSections: '-- All Sections --', allEmployeesOption: '-- All Employees --', clickToChangeShift: 'Click a cell to change shift', selectShift: 'Select Shift', overall: 'Overall', scheduleDownloaded: 'Schedule downloaded', noEmployeeSelected: 'No employee selected', downloadSchedule: 'Download Schedule', pleaseFillAll: 'Please fill all fields', endAfterStart: 'End date must be after start date', endTimeAfterStart: 'End time must be after start time', otSubmitted: 'OT request submitted', deletedMsg: 'Deleted', noLeaveData: 'No leave data in selected range', noOTData: 'No OT data in selected range', selectEmployeeFirst: 'Please select an employee first', noAttendanceData: 'No attendance data in selected range', nameUsernameRequired: 'Name and Username are required', newRequest: 'New Request', idSlashName: 'ID / Name', employees: 'employees', manageDepartments: 'Manage Departments', addDepartment: 'Add Department', editDepartment: 'Edit Department', deleteDepartment: 'Delete Department', deptName: 'Department Name', deptAdded: 'Department added', deptUpdated: 'Department updated', deptDeleted: 'Department deleted', deptInUse: 'Cannot delete — employees are assigned to this department', deptExists: 'Department already exists', enterDeptName: 'Please enter department name', lineId: 'LINE ID', createAccount: 'Create Account', backToLogin: 'Back to Login', pleaseFillRequired: 'Please fill required fields', empIdExists: 'Employee ID already exists', accountCreated: 'Account created', readingFile: 'Reading file', errorReadingFile: 'Error reading file', loadingExcelParser: 'Loading Excel parser...', excelParserLoaded: 'Excel parser loaded, processing...', excelParserError: 'Could not load Excel parser. Please check internet connection.', errorParsingFile: 'Error parsing file'
+      },
+      my: {
+        loginTitle: 'ဝန်ထမ်းရေးရာ စီမံခန့်ခွဲမှု', loginUsername: 'အသုံးပြုသူအမည်', loginPassword: 'စကားဝှက်', loginBtn: 'ဝင်ရောက်ရန်', noAccount: 'အကောင့်မရှိသေးဘူးလား?', signupLink: 'အကောင့်ဖွင့်ရန်', demoTitle: 'စမ်းသပ်အကောင့်များ:', demoMD: 'MD', demoHR: 'HR', demoDeptHead: 'ဌာနမှူး', demoEmployee: 'ဝန်ထမ်း', demoAdmin: 'အက်ဒ်မင်',
+        announcements: 'ကြေညာချက်ဘုတ်', newAnnouncement: 'ကြေညာချက်အသစ်', announcementTitle: 'ခေါင်းစဉ်', announcementBody: 'အသေးစိတ်', postedBy: 'ရေးသားသူ', noAnnouncements: 'ကြေညာချက်မရှိ', pinned: 'ပင်ထိုး', deleteAnnouncement: 'ဖျက်ရန်', pendingScheduleChanges: 'အချိန်ဇယားပြောင်းလဲမှုတောင်းဆိုချက်', scheduleChangeFrom: 'မှ', scheduleChangeTo: 'သို့', requestedBy: 'တောင်းဆိုသူ', pendingApproval: 'အတည်ပြုရန်စောင့်', attachPhotos: 'ဓာတ်ပုံပူးတွဲရန်', photos: 'ဓာတ်ပုံများ', viewPhotos: 'ဓာတ်ပုံကြည့်ရန်', downloadPhoto: 'ဒေါင်းလုဒ်', evidence: 'အထောက်အထား', noPhotos: 'ဓာတ်ပုံမရှိ', startDate: 'စတင်ရက်', endDate: 'ပြီးဆုံးရက်', startTime: 'စတင်ချိန်', endTime: 'ပြီးဆုံးချိန်', duration: 'ကြာချိန်', fullDay: 'တစ်ရက်လုံး', hourly: 'နာရီအလိုက်', leaveMode: 'ခွင့်ပုံစံ',
+        dashboard: 'ဒက်ရှ်ဘုတ်', leaveRequest: 'ခွင့်တောင်းခံခြင်း', otRequest: 'အချိန်ပိုတောင်းခံခြင်း', schedule: 'အချိန်ဇယား', loginSuccess: 'ဝင်ရောက်မှုအောင်မြင်', loginError: 'အမည်သို့မဟုတ်စကားဝှက်မှား', leaveSubmitted: 'ခွင့်တောင်းခံမှုတင်ပြပြီး', welcome: 'မင်္ဂလာပါ', used: 'အသုံးပြုပြီး', days: 'ရက်', remaining: 'ကျန်ရှိ', hours: 'နာရီ', minutes: 'မိနစ်', leaveBalance: 'ခွင့်လက်ကျန်', sickLeave: 'ဖျားနာခွင့်', personalLeave: 'ကိုယ်ရေးခွင့်', annualLeave: 'နှစ်ပတ်လည်ခွင့်', recentRequests: 'မကြာသေးမီတောင်းဆိုချက်', leaveHistory: 'ခွင့်မှတ်တမ်း', submit: 'တင်ပြရန်', cancel: 'ပယ်ဖျက်ရန်', approve: 'အတည်ပြုရန်', reject: 'ငြင်းပယ်ရန်', pending: 'ဆိုင်းငံ့', approved: 'အတည်ပြုပြီး', rejected: 'ငြင်းပယ်ပြီး', date: 'ရက်စွဲ', type: 'အမျိုးအစား', reason: 'အကြောင်းပြချက်', status: 'အခြေအနေ', action: 'လုပ်ဆောင်ချက်', logout: 'ထွက်ရန်', signup: 'အကောင့်ဖွင့်ရန်',
+        approvals: 'အတည်ပြုခြင်း', dayoff: 'အားလပ်ရက်', mySchedule: 'ကျွန်ုပ်၏အချိန်ဇယား', publicHolidays: 'အများသုံးအားလပ်', deptApprovals: 'ဌာန အတည်ပြု', allLeaveRequests: 'ခွင့်တောင်းခံမှု အားလုံး', allOTRequests: 'အချိန်ပိုတောင်း အားလုံး', scheduleManagement: 'အချိန်ဇယား စီမံခန့်ခွဲမှု', employeeManagement: 'အလုပ်သမားစီမံခန့်ခွဲမှု', attendance: 'တက်ရောက်မှု', reports: 'အစီရင်ခံစာ', activityLog: 'လုပ်ဆောင်ချက်မှတ်တမ်း', newLeaveRequest: 'ခွင့်တောင်းခံမှု အသစ်', newOTRequest: 'အချိန်ပိုတောင်း အသစ်', prevWeek: 'အတြင်းလက်သည့်သီတ္ဂဏန်း', nextWeek: 'နောက်တစ်သီတ္ဂဏန်း', mon: 'တနင်္လာ', tue: 'အင်္ဂါ', wed: 'ဗုဒ္ဓဟူး', thu: 'ကြာသပတ်', fri: 'သောကြာ', sat: 'စနေ', sun: 'တနင်္ဂနွေ', employee: 'အလုပ်သမား', department: 'ဌာန', position: 'ရာထူး', phone: 'ဖုန်း', role: 'အခန်းကဏ္ဍ', edit: 'ပြင်ဆင်ရန်', delete: 'ဖျက်ရန်', confirmDelete: 'ဖျက်ရန်သေချာပါသလား?', checkIn: 'ဝင်ရောက်', status: 'အခြေအနေ', late: 'နှောင်းပေါ်း', ontime: 'ချိန်မှန်', downloadCSV: 'CSV ဒေါင်းလုဒ်လုပ်ရန်', noData: 'ဒေတာမရှိ', uploadAttendance: 'တက်ရောက်မှုဖိုင်တင်ရန်', attendanceUploaded: 'တက်ရောက်မှုဒေတာတင်ပြီး', lateToday: 'ဒီနေ့နှောင်းပေါ်းသူများ', lateBy: 'နှောင်းပေါ်းချိန်', shift: 'အလှည့်', shiftTime: 'အလှည့်ချိန်', scheduled: 'သတ်မှတ်ချိန်', lateThisMonth: 'ဒီလနှောင်းပေါ်း', timesLate: 'ကြိမ်', myProfile: 'ကိုယ်ရေးအချက်အလက်', editProfile: 'ပြင်ဆင်ရန်', profileUpdated: 'အချက်အလက်အပ်ဒိတ်လုပ်ပြီး', profilePicture: 'ပရိုဖိုင်ပုံ', uploadPhoto: 'ပုံတင်ရန်', removePhoto: 'ပုံဖျက်ရန်', contacts: 'အဆက်အသွယ်များ', employeeDirectory: 'ဝန်ထမ်းစာရင်း', backOfficeTeam: 'Back Office အဖွဲ့', addBackOfficeContact: 'Back Office အဆက်အသွယ်ထည့်ရန်', contactName: 'အမည်', contactRole: 'ရာထူး/တာဝန်', contactLineId: 'LINE ID', contactPhone: 'ဖုန်း', contactEmail: 'အီးမေးလ်', contactNotes: 'မှတ်ချက်',
+        birthday: 'မွေးနေ့', address: 'လိပ်စာ', nationality: 'နိုင်ငံသား', email: 'အီးမေးလ်', nickname: 'အမည်ပြော', requestLeave: 'ခွင့်တောင်းရန်', from: 'မှ', to: 'သို့', search: 'ရှာဖွေရန်', all: 'အားလုံး', checkOut: 'ထွက်ခွာ', recalcSchedule: 'အချိန်ဇယားမှပြန်တွက်ရန်', attendanceNote: 'အခြေအနေသည် အချိန်ဇယားစီမံခန့်ခွဲမှုနှင့် အတည်ပြုထားသော OT နှင့်ချိတ်ဆက်ထားသည်။ * အမှတ်အသားပါ အလှည့်များသည် ပုံမှန် (အလှည့် A ရက်သတ္တပတ်ရက်များ) ကိုအသုံးပြုသည်။ အချိန်ဇယားသတ်မှတ်ပြီး OT အတည်ပြုပြီးမှ ပြန်တွက်ရန် နှိပ်ပါ။', records: 'မှတ်တမ်း', allEmployeesReport: 'ဝန်ထမ်းအားလုံး အစီရင်ခံစာ (CSV)', individualReport: 'တစ်ဦးချင်း အစီရင်ခံစာ (CSV)', lateSummary: 'နှောင့်နှေးမှုအနှစ်ချုပ် (CSV)', offDayScanTitle: 'သတ်မှတ်ထားသော အားလပ်ရက်တွင် စကင်ဖတ်ထားသည် — အတည်ပြုထားသော OT မရှိ', offDayScanNote: 'အောက်ပါဝန်ထမ်းများသည် ၎င်းတို့၏သတ်မှတ်ထားသော အားလပ်ရက်တွင် စကင်ဖတ်ဝင်ရောက်ခဲ့ကြသည်။ OT ခွင့်ပြုထားခြင်းရှိ/မရှိ စစ်ဆေးပါ။', leaveRequests: 'ခွင့်တောင်းခံမှုများ', otRequestsLabel: 'အချိန်ပိုတောင်းခံမှုများ', leaveRequestsPending: 'ဆိုင်းငံ့ခွင့်တောင်းခံမှုများ', otRequestsPending: 'ဆိုင်းငံ့အချိန်ပိုတောင်းခံမှုများ', time: 'အချိန်', unknown: 'မသိ', onlyHRMDApprove: 'HR/MD သာ အတည်ပြုနိုင်သည်', onlyHRMDReject: 'HR/MD သာ ငြင်းပယ်နိုင်သည်', adminNoApproval: 'အက်ဒ်မင်တွင် အတည်ပြုခွင့်မရှိပါ', adminNoSchedule: 'အက်ဒ်မင်တွင် အချိန်ဇယား စီမံခွင့်မရှိပါ', searchIdNameNickname: 'ရှာဖွေရန် (ID / အမည် / အမည်ပြော)', fingerprint: 'လက်ဗွေ', level: 'အဆင့်', empStartDate: 'စတင်ရက်', employeeId: 'ဝန်ထမ်းအမှတ်', fingerprintId: 'လက်ဗွေအမှတ်', username: 'အသုံးပြုသူအမည်', passwordField: 'စကားဝှက်', fullName: 'အမည်အပြည့်အစုံ', section: 'ကဏ္ဍ', sectionPlaceholder: 'ဥပမာ Bakery, Bar, Service', employeeDeleted: 'ဝန်ထမ်းကိုဖျက်ပြီး', employeeUpdated: 'ဝန်ထမ်းအချက်အလက်အပ်ဒိတ်လုပ်ပြီး', addEmployee: 'ဝန်ထမ်းထည့်ရန်', deptHead: 'ဌာနမှူး', admin: 'အက်ဒ်မင်', hr: 'HR', md: 'MD', leaveReportCSV: 'ခွင့်အစီရင်ခံစာ (CSV)', otReportCSV: 'အချိန်ပို အစီရင်ခံစာ (CSV)', attendanceReportCSV: 'တက်ရောက်မှု အစီရင်ခံစာ (CSV)', weeklyScheduleCSV: 'အပတ်စဉ် အချိန်ဇယား (CSV)', activityLogCSV: 'လုပ်ဆောင်ချက်မှတ်တမ်း (CSV)', total: 'စုစုပေါင်း', retentionPolicy: 'ဒေတာသိမ်းဆည်းမှုမူဝါဒ: အနည်းဆုံး ရက် ၃၀', timestamp: 'အချိန်တံဆိပ်', user: 'အသုံးပြုသူ', detail: 'အသေးစိတ်', searchContacts: 'ID, အမည်, အမည်ပြော, ဌာန ဖြင့်ရှာဖွေရန်...', contactUpdated: 'အဆက်အသွယ်အပ်ဒိတ်လုပ်ပြီး', contactAdded: 'အဆက်အသွယ်ထည့်ပြီး', contactDeleted: 'အဆက်အသွယ်ဖျက်ပြီး', allSections: '-- ကဏ္ဍအားလုံး --', allEmployeesOption: '-- ဝန်ထမ်းအားလုံး --', clickToChangeShift: 'အလှည့်ပြောင်းရန် ကွက်တစ်ခုကို နှိပ်ပါ', selectShift: 'အလှည့်ရွေးရန်', overall: 'အလုံးစုံ', scheduleDownloaded: 'အချိန်ဇယားဒေါင်းလုဒ်လုပ်ပြီး', noEmployeeSelected: 'ဝန်ထမ်းမရွေးရသေးပါ', downloadSchedule: 'အချိန်ဇယားဒေါင်းလုဒ်', pleaseFillAll: 'အကွက်အားလုံးဖြည့်ပါ', endAfterStart: 'ပြီးဆုံးရက်သည် စတင်ရက်နောက်ဖြစ်ရမည်', endTimeAfterStart: 'ပြီးဆုံးချိန်သည် စတင်ချိန်နောက်ဖြစ်ရမည်', otSubmitted: 'အချိန်ပိုတောင်းခံမှုတင်ပြပြီး', deletedMsg: 'ဖျက်ပြီး', noLeaveData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် ခွင့်ဒေတာမရှိ', noOTData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် OT ဒေတာမရှိ', selectEmployeeFirst: 'ဝန်ထမ်းကို အရင်ရွေးပါ', noAttendanceData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် တက်ရောက်မှုဒေတာမရှိ', nameUsernameRequired: 'အမည်နှင့်အသုံးပြုသူအမည် လိုအပ်သည်', newRequest: 'တောင်းဆိုချက်အသစ်', idSlashName: 'ID / အမည်', employees: 'ဝန်ထမ်း', manageDepartments: 'ဌာနများစီမံရန်', addDepartment: 'ဌာနထည့်ရန်', editDepartment: 'ဌာနပြင်ဆင်ရန်', deleteDepartment: 'ဌာနဖျက်ရန်', deptName: 'ဌာနအမည်', deptAdded: 'ဌာနထည့်ပြီး', deptUpdated: 'ဌာနအပ်ဒိတ်လုပ်ပြီး', deptDeleted: 'ဌာနဖျက်ပြီး', deptInUse: 'ဖျက်၍မရပါ — ဝန်ထမ်းများ ဤဌာနတွင်ရှိနေသည်', deptExists: 'ဌာနရှိပြီးသားဖြစ်သည်', enterDeptName: 'ဌာနအမည်ထည့်ပါ', lineId: 'LINE ID', createAccount: 'အကောင့်ဖွင့်ရန်', backToLogin: 'ဝင်ရောက်ရန်သို့ပြန်သွားရန်', pleaseFillRequired: 'လိုအပ်သောအကွက်များဖြည့်ပါ', empIdExists: 'ဝန်ထမ်းအမှတ် ရှိပြီးသားဖြစ်သည်', accountCreated: 'အကောင့်ဖွင့်ပြီးပါပြီ', readingFile: 'ဖိုင်ဖတ်နေသည်', errorReadingFile: 'ဖိုင်ဖတ်ရာတွင် အမှားရှိသည်', loadingExcelParser: 'Excel parser ကိုဖွင့်နေသည်...', excelParserLoaded: 'Excel parser ဖွင့်ပြီး ပြုလုပ်နေသည်...', excelParserError: 'Excel parser ကိုဖွင့်၍မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။', errorParsingFile: 'ဖိုင်ခွဲခြမ်းရာတွင် အမှားရှိသည်'
+      }
+    };
+
+    function t(key) { return T[APP.lang][key] || key; }
+
+    function doLogin() {
+      try {
+        var u = document.getElementById('username').value.trim();
+        var p = document.getElementById('password').value;
+        console.log('Login attempt:', u);
+        var emp = APP.employees.find(function(e) { return e.username === u && e.password === p; });
+        if (emp) {
+          APP.currentUser = emp;
+          document.getElementById('loginPage').style.display = 'none';
+          document.getElementById('signupPage').style.display = 'none';
+          document.getElementById('mainApp').style.display = 'flex';
+          console.log('Login success:', emp.name);
+          renderApp();
+          showToast(t('loginSuccess'), 'success');
+        } else {
+          console.log('Login failed - no match for:', u);
+          showToast(t('loginError'), 'error');
+        }
+      } catch(err) {
+        console.error('Login error:', err);
+        alert('Login error: ' + err.message);
+      }
+    }
+
+    function doLogout() {
+      APP.currentUser = null;
+      document.getElementById('mainApp').style.display = 'none';
+      document.getElementById('loginPage').style.display = 'block';
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+    }
+
+    function goToLogin() {
+      document.getElementById('loginPage').style.display = 'block';
+      document.getElementById('signupPage').style.display = 'none';
+    }
+
+    function renderSignupPage() {
+      var el, star = ' <span class="required-star">*</span>';
+      el = document.getElementById('signupTitle'); if (el) el.textContent = t('createAccount');
+      el = document.getElementById('lblSignupEmpId'); if (el) el.textContent = t('employeeId');
+      el = document.getElementById('lblSignupName'); if (el) el.innerHTML = t('fullName') + star;
+      el = document.getElementById('lblSignupUsername'); if (el) el.innerHTML = t('username') + star;
+      el = document.getElementById('lblSignupPassword'); if (el) el.innerHTML = t('passwordField') + star;
+      el = document.getElementById('lblSignupPhone'); if (el) el.innerHTML = t('phone') + star;
+      el = document.getElementById('lblSignupEmail'); if (el) el.textContent = t('email');
+      el = document.getElementById('lblSignupDept'); if (el) el.textContent = t('department');
+      el = document.getElementById('signupDept'); if (el) el.innerHTML = APP.departments.map(function(d) { return '<option>' + d + '</option>'; }).join('');
+      el = document.getElementById('lblSignupSection'); if (el) el.textContent = t('section');
+      el = document.getElementById('lblSignupPos'); if (el) el.textContent = t('position');
+      el = document.getElementById('lblSignupAddress'); if (el) el.textContent = t('address');
+      el = document.getElementById('lblSignupLineId'); if (el) el.textContent = t('lineId');
+      el = document.getElementById('lblSignupBirthday'); if (el) el.textContent = t('birthday');
+      el = document.getElementById('lblSignupNationality'); if (el) el.textContent = t('nationality');
+      el = document.getElementById('signupBtn'); if (el) el.textContent = t('createAccount');
+      el = document.getElementById('backToLoginLink'); if (el) el.textContent = t('backToLogin');
+    }
+    function goToSignup() {
+      document.getElementById('signupPage').style.display = 'block';
+      document.getElementById('loginPage').style.display = 'none';
+      renderSignupPage();
+    }
+
+    function doSignup() {
+      const empId = document.getElementById('signupEmpId').value.trim();
+      const name = document.getElementById('signupName').value.trim();
+      const username = document.getElementById('signupUsername').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const phone = document.getElementById('signupPhone').value.trim();
+      if (!name || !username || !password || !phone) {
+        showToast(t('pleaseFillRequired'), 'error');
+        return;
+      }
+      if (empId && APP.employees.find(function(e) { return e.empId === empId; })) {
+        showToast(t('empIdExists'), 'error');
+        return;
+      }
+      const newEmp = {
+        id: 'new' + Date.now(),
+        empId: empId,
+        fingerprintId: empId,
+        username, password, name, phone,
+        dept: document.getElementById('signupDept').value,
+        section: document.getElementById('signupSection') ? document.getElementById('signupSection').value.trim() : '',
+        pos: document.getElementById('signupPos').value.trim(),
+        role: 'employee',
+        email: document.getElementById('signupEmail').value.trim(),
+        nationality: document.getElementById('signupNationality').value,
+        birthday: document.getElementById('signupBirthday').value,
+        address: document.getElementById('signupAddress').value.trim(),
+        lineId: document.getElementById('signupLineId').value.trim(),
+        nickname: '', startDate: new Date().toISOString().split('T')[0], level: ''
+      };
+      APP.employees.push(newEmp);
+      addLog('signup', `New account created: ${username}`);
+      showToast(t('accountCreated'), 'success');
+      goToLogin();
+    }
+
+    function updateSidebarAvatar(emp) {
+      var avatar = document.querySelector('.user-avatar');
+      if (emp.photo) {
+        avatar.innerHTML = '<img src="' + emp.photo + '" style="width:50px; height:50px; border-radius:50%; object-fit:cover;">';
+        avatar.style.background = 'none';
+      } else {
+        avatar.innerHTML = '';
+        avatar.textContent = emp.name.charAt(0).toUpperCase();
+        avatar.style.background = '#FF6C37';
+      }
+    }
+
+    function renderApp() {
+      document.querySelector('.user-name').textContent = APP.currentUser.name;
+      document.querySelector('.user-role').textContent = (APP.currentUser.empId || '') + ' | ' + APP.currentUser.role;
+      updateSidebarAvatar(APP.currentUser);
+      renderNavigation();
+      navigateTo('dashboard');
+    }
+
+    function renderNavigation() {
+      const navList = document.querySelector('.nav-list');
+      navList.innerHTML = '';
+      let items = [];
+
+      if (APP.currentUser.role === 'employee') {
+        items = [
+          {page: 'dashboard', icon: '\u{1F4CA}', label: t('dashboard')},
+          {page: 'leaveRequest', icon: '\u{1F4DD}', label: t('leaveRequest')},
+          {page: 'otRequest', icon: '\u{23F0}', label: t('otRequest')},
+          {page: 'schedule', icon: '\u{1F4C5}', label: t('mySchedule')},
+          {page: 'contacts', icon: '\u{1F4DE}', label: t('contacts')},
+          {page: 'publicHolidays', icon: '\u{1F3D6}', label: t('publicHolidays')}
+        ];
+      } else if (APP.currentUser.role === 'depthead') {
+        items = [
+          {page: 'dashboard', icon: '\u{1F4CA}', label: t('dashboard')},
+          {page: 'leaveRequest', icon: '\u{1F4DD}', label: t('leaveRequest')},
+          {page: 'otRequest', icon: '\u{23F0}', label: t('otRequest')},
+          {page: 'scheduleManagement', icon: '\u{1F4C5}', label: t('scheduleManagement')},
+          {page: 'deptApprovals', icon: '\u2705', label: t('deptApprovals')},
+          {page: 'contacts', icon: '\u{1F4DE}', label: t('contacts')},
+          {page: 'publicHolidays', icon: '\u{1F3D6}', label: t('publicHolidays')}
+        ];
+      } else if (APP.currentUser.role === 'hr') {
+        items = [
+          {page: 'dashboard', icon: '\u{1F4CA}', label: t('dashboard')},
+          {page: 'allLeaveRequests', icon: '\u{1F4DD}', label: t('allLeaveRequests')},
+          {page: 'allOTRequests', icon: '\u{23F0}', label: t('allOTRequests')},
+          {page: 'approvals', icon: '\u2705', label: t('approvals')},
+          {page: 'scheduleManagement', icon: '\u{1F4C5}', label: t('scheduleManagement')},
+          {page: 'employeeManagement', icon: '\u{1F465}', label: t('employeeManagement')},
+          {page: 'attendance', icon: '\u{1F4CB}', label: t('attendance')},
+          {page: 'contacts', icon: '\u{1F4DE}', label: t('contacts')},
+          {page: 'reports', icon: '\u{1F4C4}', label: t('reports')},
+          {page: 'activityLog', icon: '\u{1F4DC}', label: t('activityLog')},
+          {page: 'publicHolidays', icon: '\u{1F3D6}', label: t('publicHolidays')}
+        ];
+      } else if (APP.currentUser.role === 'md') {
+        // MD has same access as HR
+        items = [
+          {page: 'dashboard', icon: '\u{1F4CA}', label: t('dashboard')},
+          {page: 'allLeaveRequests', icon: '\u{1F4DD}', label: t('allLeaveRequests')},
+          {page: 'allOTRequests', icon: '\u{23F0}', label: t('allOTRequests')},
+          {page: 'approvals', icon: '\u2705', label: t('approvals')},
+          {page: 'scheduleManagement', icon: '\u{1F4C5}', label: t('scheduleManagement')},
+          {page: 'employeeManagement', icon: '\u{1F465}', label: t('employeeManagement')},
+          {page: 'attendance', icon: '\u{1F4CB}', label: t('attendance')},
+          {page: 'contacts', icon: '\u{1F4DE}', label: t('contacts')},
+          {page: 'reports', icon: '\u{1F4C4}', label: t('reports')},
+          {page: 'activityLog', icon: '\u{1F4DC}', label: t('activityLog')},
+          {page: 'publicHolidays', icon: '\u{1F3D6}', label: t('publicHolidays')}
+        ];
+      } else if (APP.currentUser.role === 'admin') {
+        // Admin has same access as HR except approvals and schedule management
+        items = [
+          {page: 'dashboard', icon: '\u{1F4CA}', label: t('dashboard')},
+          {page: 'allLeaveRequests', icon: '\u{1F4DD}', label: t('allLeaveRequests')},
+          {page: 'allOTRequests', icon: '\u{23F0}', label: t('allOTRequests')},
+          {page: 'employeeManagement', icon: '\u{1F465}', label: t('employeeManagement')},
+          {page: 'attendance', icon: '\u{1F4CB}', label: t('attendance')},
+          {page: 'contacts', icon: '\u{1F4DE}', label: t('contacts')},
+          {page: 'reports', icon: '\u{1F4C4}', label: t('reports')},
+          {page: 'activityLog', icon: '\u{1F4DC}', label: t('activityLog')},
+          {page: 'publicHolidays', icon: '\u{1F3D6}', label: t('publicHolidays')}
+        ];
+      }
+
+      items.forEach(item => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.className = 'nav-link';
+        a.innerHTML = `<span style="width:20px;margin-right:12px;display:inline-block;text-align:center;">${item.icon}</span> ${item.label}`;
+        a.onclick = () => navigateTo(item.page);
+        li.appendChild(a);
+        navList.appendChild(li);
+      });
+    }
+
+    function navigateTo(page) {
+      currentPage = page;
+      let headerText = t(page) || page;
+      document.querySelector('.header-left h2').textContent = headerText;
+      const content = document.getElementById('content');
+      if (page === 'dashboard') renderDashboard();
+      else if (page === 'leaveRequest') renderLeaveRequest();
+      else if (page === 'otRequest') renderOTRequest();
+      else if (page === 'schedule' || page === 'mySchedule') renderSchedule();
+      else if (page === 'publicHolidays') renderPublicHolidays();
+      else if (page === 'deptApprovals') renderDeptApprovals();
+      else if (page === 'allLeaveRequests') renderAllLeaveRequests();
+      else if (page === 'allOTRequests') renderAllOTRequests();
+      else if (page === 'approvals') { if (APP.currentUser.role === 'admin') { showToast(t('adminNoApproval'), 'error'); return; } renderApprovals(); }
+      else if (page === 'scheduleManagement') { if (APP.currentUser.role === 'admin') { showToast(t('adminNoSchedule'), 'error'); return; } renderScheduleManagement(); }
+      else if (page === 'employeeManagement') renderEmployeeManagement();
+      else if (page === 'attendance') renderAttendance();
+      else if (page === 'reports') renderReports();
+      else if (page === 'activityLog') renderActivityLog();
+      else if (page === 'contacts') renderContacts();
+    }
+
+    function renderDashboard() {
+      const content = document.getElementById('content');
+      const user = APP.currentUser;
+      var myApproved = APP.leaves.filter(l => l.empId === user.id && l.status === 'approved');
+      var usedSick = 0, usedPersonal = 0, usedAnnual = 0;
+      myApproved.forEach(function(l) {
+        var d = l.mode === 'hourly' ? (l.duration / 8) : (l.duration || 1);
+        if (l.type === 'sickLeave') usedSick += d;
+        else if (l.type === 'personalLeave') usedPersonal += d;
+        else if (l.type === 'annualLeave') usedAnnual += d;
+      });
+      usedSick = Math.round(usedSick * 10) / 10;
+      usedPersonal = Math.round(usedPersonal * 10) / 10;
+      usedAnnual = Math.round(usedAnnual * 10) / 10;
+      var totalUsedDays = Math.round((usedSick + usedPersonal + usedAnnual) * 10) / 10;
+      const isManager = (user.role === 'hr' || user.role === 'md' || user.role === 'admin');
+
+      // Calculate late count this month for current user
+      var now = new Date();
+      var monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      var monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
+      var myLateThisMonth = APP.attendance.filter(function(a) {
+        return a.empId === user.id && a.status === 'late' && a.date >= monthStart && a.date <= monthEnd;
+      }).length;
+
+      // For managers: late today alert
+      var todayStr = now.toISOString().split('T')[0];
+      var lateTodayList = APP.attendance.filter(function(a) { return a.status === 'late' && a.date === todayStr; });
+      var lateAlertHTML = '';
+      if (isManager && lateTodayList.length > 0) {
+        lateAlertHTML = '<div class="card" style="border-left:4px solid #E74C3C; margin-bottom:20px; background:rgba(231,76,60,0.03);">';
+        lateAlertHTML += '<h3 style="margin-bottom:10px; color:#E74C3C;">\u{1F6A8} ' + t('lateToday') + ' (' + lateTodayList.length + ')</h3>';
+        lateAlertHTML += '<div style="overflow-x:auto;"><table><tr><th>' + t('employeeId') + '</th><th>' + t('employee') + '</th><th>' + t('department') + '</th><th>' + t('shift') + '</th><th>' + t('scheduled') + '</th><th>' + t('checkIn') + '</th><th>' + t('lateBy') + '</th></tr>';
+        lateTodayList.forEach(function(a) {
+          var emp = APP.employees.find(function(e) { return e.id === a.empId; });
+          lateAlertHTML += '<tr><td>' + (emp ? (emp.empId || '') : '') + '</td><td>' + (emp ? emp.name : a.empId) + '</td><td>' + (emp ? emp.dept : '-') + '</td><td>' + (a.shift || '-') + '</td><td>' + (a.shiftStart || '-') + '</td><td style="color:#E74C3C; font-weight:700;">' + a.checkIn + '</td><td style="color:#E74C3C; font-weight:700;">' + a.lateMinutes + ' min</td></tr>';
+        });
+        lateAlertHTML += '</table></div></div>';
+      }
+
+      // Build announcement board
+      var announcementHTML = '<div class="card" style="border-left:4px solid #FF6C37; margin-bottom:20px;">';
+      announcementHTML += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">';
+      announcementHTML += '<h3 style="margin-bottom:0;">\u{1F4E2} ' + t('announcements') + '</h3>';
+      if (isManager) {
+        announcementHTML += '<button class="btn btn-primary btn-small" onclick="openAnnouncementModal()">' + t('newAnnouncement') + '</button>';
+      }
+      announcementHTML += '</div>';
+
+      if (APP.announcements.length === 0) {
+        announcementHTML += '<p style="color:#999; font-style:italic;">' + t('noAnnouncements') + '</p>';
+      } else {
+        var sorted = APP.announcements.slice().sort(function(a, b) {
+          if (a.pinned && !b.pinned) return -1;
+          if (!a.pinned && b.pinned) return 1;
+          return new Date(b.date) - new Date(a.date);
+        });
+        sorted.forEach(function(ann) {
+          var pinnedBadge = ann.pinned ? '<span style="background:#FF6C37; color:white; padding:2px 8px; border-radius:10px; font-size:11px; margin-left:8px;">' + t('pinned') + '</span>' : '';
+          var deleteBtn = isManager ? ' <button class="btn btn-danger btn-small" style="padding:2px 8px; font-size:11px;" onclick="deleteAnnouncement(\'' + ann.id + '\')">' + t('deleteAnnouncement') + '</button>' : '';
+          announcementHTML += '<div style="padding:12px; margin-bottom:10px; background:#F7F8FA; border-radius:6px; border:1px solid #eee;">';
+          announcementHTML += '<div style="display:flex; justify-content:space-between; align-items:flex-start;">';
+          announcementHTML += '<div><strong style="color:#1A365D; font-size:15px;">' + ann.title + '</strong>' + pinnedBadge + '</div>';
+          announcementHTML += '<div style="display:flex; gap:5px; align-items:center;">' + deleteBtn + '</div>';
+          announcementHTML += '</div>';
+          announcementHTML += '<p style="margin:8px 0; font-size:14px; white-space:pre-wrap;">' + ann.body + '</p>';
+          announcementHTML += '<small style="color:#999;">' + t('postedBy') + ' ' + ann.author + ' | ' + ann.date + '</small>';
+          announcementHTML += '</div>';
+        });
+      }
+      announcementHTML += '</div>';
+
+      content.innerHTML = `
+        <h2>${t('welcome')}, ${user.name}</h2>
+        <div class="card" style="margin-bottom:20px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin-bottom:0;">\u{1F464} ${t('myProfile')}</h3>
+            <button class="btn btn-secondary btn-small" onclick="openMyProfileModal()">${t('editProfile')}</button>
+          </div>
+          <div style="display:flex; gap:20px; align-items:flex-start;">
+            <div style="flex-shrink:0;">
+              ${user.photo ? '<img src="' + user.photo + '" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #FF6C37;">' : '<div style="width:80px; height:80px; border-radius:50%; background:#003764; color:white; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:700;">' + user.name.charAt(0).toUpperCase() + '</div>'}
+            </div>
+          <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:8px 20px; font-size:14px;">
+            <div><strong>ID:</strong> ${user.empId || '-'}</div>
+            <div><strong>${t('department')}:</strong> ${user.dept}</div>
+            <div><strong>${t('position')}:</strong> ${user.pos || '-'}</div>
+            <div><strong>${t('contactPhone')}:</strong> ${user.phone || '-'}</div>
+            <div><strong>${t('contactEmail')}:</strong> ${user.email || '-'}</div>
+            <div><strong>${t('lineId')}:</strong> ${user.lineId || '-'}</div>
+            <div><strong>${t('birthday')}</strong>: ${user.birthday || '-'}</div>
+            <div><strong>${t('nationality')}</strong>: ${user.nationality || '-'}</div>
+            <div style="grid-column:span 2;"><strong>${t('address')}</strong>: ${user.address || '-'}</div>
+          </div>
+          </div>
+        </div>
+        ${lateAlertHTML}
+        ${announcementHTML}
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number">${totalUsedDays}</div><div class="stat-label">${t('used')} ${t('days')}</div></div>
+          <div class="stat-card"><div class="stat-number">${Math.max(0, 40 - totalUsedDays)}</div><div class="stat-label">${t('remaining')} ${t('days')}</div></div>
+          <div class="stat-card" style="border-top-color:${myLateThisMonth > 0 ? '#E74C3C' : '#27AE60'};"><div class="stat-number" style="color:${myLateThisMonth > 0 ? '#E74C3C' : '#27AE60'};">${myLateThisMonth}</div><div class="stat-label">${t('lateThisMonth')}</div></div>
+        </div>
+        <div class="card">
+          <h3>${t('leaveBalance')}</h3>
+          <table>
+            <tr><td>${t('sickLeave')}</td><td>${usedSick}/30 ${t('days')}</td></tr>
+            <tr><td>${t('personalLeave')}</td><td>${usedPersonal}/3 ${t('days')}</td></tr>
+            <tr><td>${t('annualLeave')}</td><td>${usedAnnual}/7 ${t('days')}</td></tr>
+          </table>
+        </div>
+        <div class="card">
+          <h3>\u{1F4CB} ${t('leaveHistory')}</h3>
+          <div style="overflow-x:auto;">
+          <table>
+            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('reason')}</th><th>${t('status')}</th></tr>
+            ${APP.leaves.filter(l => l.empId === user.id).slice().reverse().map(l => {
+              var dateCol = l.mode === 'hourly' ? l.from + '<br><small style="color:#666;">' + (l.startTime||'') + ' - ' + (l.endTime||'') + '</small>' : (l.to && l.to !== l.from ? l.from + ' ~ ' + l.to : l.from);
+              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + (l.durationText || '-') + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + l.status + '">' + T[APP.lang][l.status] + '</span></td></tr>';
+            }).join('')}
+          </table>
+          </div>
+          ${APP.leaves.filter(l => l.empId === user.id).length === 0 ? '<p style="color:#999; text-align:center; padding:15px;">' + t('noData') + '</p>' : ''}
+        </div>
+        <button class="btn btn-primary" onclick="navigateTo('leaveRequest')">${t('requestLeave')}</button>
+      `;
+    }
+
+    function openAnnouncementModal() {
+      var html = '<div class="form-group"><label>' + t('announcementTitle') + '</label><input type="text" id="annTitle" placeholder="' + t('announcementTitle') + '"></div>';
+      html += '<div class="form-group"><label>' + t('announcementBody') + '</label><textarea id="annBody" rows="4" placeholder="' + t('announcementBody') + '"></textarea></div>';
+      html += '<div class="form-group"><label style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="annPinned"> ' + t('pinned') + '</label></div>';
+      html += '<div class="modal-footer">';
+      html += '<button class="btn btn-secondary" onclick="closeModal()">' + t('cancel') + '</button>';
+      html += '<button class="btn btn-primary" onclick="submitAnnouncement()">' + t('submit') + '</button>';
+      html += '</div>';
+      openModal(t('newAnnouncement'), html);
+    }
+
+    function submitAnnouncement() {
+      var title = document.getElementById('annTitle').value.trim();
+      var body = document.getElementById('annBody').value.trim();
+      var pinned = document.getElementById('annPinned').checked;
+      if (!title || !body) {
+        showToast(t('pleaseFillAll'), 'error');
+        return;
+      }
+      APP.announcements.push({
+        id: 'ANN' + Date.now(),
+        title: title,
+        body: body,
+        pinned: pinned,
+        author: APP.currentUser.name,
+        date: new Date().toISOString().split('T')[0]
+      });
+      addLog('announcement', 'New announcement: ' + title);
+      showToast(t('newAnnouncement') + ' - OK', 'success');
+      closeModal();
+      renderDashboard();
+    }
+
+    function deleteAnnouncement(id) {
+      if (!confirm(t('confirmDelete'))) return;
+      var idx = APP.announcements.findIndex(function(a) { return a.id === id; });
+      if (idx >= 0) {
+        var ann = APP.announcements[idx];
+        APP.announcements.splice(idx, 1);
+        addLog('announcement_delete', 'Announcement deleted: ' + ann.title);
+        showToast(t('deletedMsg'), 'success');
+        renderDashboard();
+      }
+    }
+
+    function renderLeaveRequest() {
+      const content = document.getElementById('content');
+      const photoCol = function(l) {
+        var count = l.photos ? l.photos.length : 0;
+        if (count === 0) return '<td>-</td>';
+        return '<td><button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + l.id + '\')">\u{1F4F7} ' + count + '</button></td>';
+      };
+      var leaveDateCol = function(l) {
+        if (l.mode === 'hourly') {
+          return '<td>' + l.from + '<br><small style="color:#666;">' + (l.startTime || '') + ' - ' + (l.endTime || '') + '</small></td>';
+        }
+        if (l.to && l.to !== l.from) {
+          return '<td>' + l.from + ' ~ ' + l.to + '</td>';
+        }
+        return '<td>' + l.from + '</td>';
+      };
+      content.innerHTML = `
+        <button class="btn btn-primary mb-20" onclick="openLeaveModal()">${t('newRequest')}</button>
+        <div class="card">
+          <h3>${t('leaveRequest')}</h3>
+          <div style="overflow-x:auto;">
+          <table>
+            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('photos')}</th><th>${t('status')}</th></tr>
+            ${APP.leaves.filter(l => l.empId === APP.currentUser.id).map(l => `<tr>${leaveDateCol(l)}<td>${t(l.type)}</td><td>${l.durationText || '-'}</td>${photoCol(l)}<td><span class="badge badge-${l.status}">${T[APP.lang][l.status]}</span></td></tr>`).join('')}
+          </table>
+          </div>
+        </div>
+      `;
+    }
+
+    var leavePhotosTemp = [];
+
+    function openLeaveModal() {
+      leavePhotosTemp = [];
+      var today = new Date().toISOString().split('T')[0];
+      const html = `
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option></select></div>
+        <div class="form-group"><label>${t('leaveMode')}</label>
+          <select id="leaveMode" onchange="toggleLeaveMode()">
+            <option value="fullday">${t('fullDay')}</option>
+            <option value="hourly">${t('hourly')}</option>
+          </select>
+        </div>
+        <div id="leaveDateFields">
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startDate')}</label><input type="date" id="leaveStartDate" value="${today}" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endDate')}</label><input type="date" id="leaveEndDate" value="${today}" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveTimeFields" style="display:none;">
+          <div class="form-group"><label>${t('date')}</label><input type="date" id="leaveHourlyDate" value="${today}"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startTime')}</label><input type="time" id="leaveStartTime" value="09:00" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endTime')}</label><input type="time" id="leaveEndTime" value="12:00" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveDurationDisplay" style="padding:10px; background:#F0F4F8; border-radius:6px; margin-bottom:15px; font-size:14px; color:#1A365D; font-weight:600;">${t('duration')}: 1 ${t('days')}</div>
+        <div class="form-group"><label>${t('reason')}</label><textarea id="leaveReason" rows="3"></textarea></div>
+        <div class="form-group">
+          <label>\u{1F4F7} ${t('attachPhotos')}</label>
+          <input type="file" id="leavePhotos" accept="image/*" multiple onchange="previewLeavePhotos(this)" style="padding:8px; border:1px dashed #ccc; border-radius:6px; width:100%; cursor:pointer;">
+          <div id="leavePhotoPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="submitLeave()">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('leaveRequest'), html);
+    }
+
+    function toggleLeaveMode() {
+      var mode = document.getElementById('leaveMode').value;
+      document.getElementById('leaveDateFields').style.display = mode === 'fullday' ? 'block' : 'none';
+      document.getElementById('leaveTimeFields').style.display = mode === 'hourly' ? 'block' : 'none';
+      calcLeaveDuration();
+    }
+
+    function calcLeaveDuration() {
+      var mode = document.getElementById('leaveMode').value;
+      var display = document.getElementById('leaveDurationDisplay');
+      if (mode === 'fullday') {
+        var start = document.getElementById('leaveStartDate').value;
+        var end = document.getElementById('leaveEndDate').value;
+        if (start && end) {
+          var diff = Math.round((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+          if (diff < 1) diff = 1;
+          display.textContent = t('duration') + ': ' + diff + ' ' + t('days');
+        }
+      } else {
+        var st = document.getElementById('leaveStartTime').value;
+        var et = document.getElementById('leaveEndTime').value;
+        if (st && et) {
+          var sp = st.split(':'), ep = et.split(':');
+          var mins = (parseInt(ep[0]) * 60 + parseInt(ep[1])) - (parseInt(sp[0]) * 60 + parseInt(sp[1]));
+          if (mins < 0) mins = 0;
+          var hrs = Math.floor(mins / 60);
+          var rm = mins % 60;
+          display.textContent = t('duration') + ': ' + hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+        }
+      }
+    }
+
+    function previewLeavePhotos(input) {
+      leavePhotosTemp = [];
+      var preview = document.getElementById('leavePhotoPreview');
+      preview.innerHTML = '';
+      if (!input.files || input.files.length === 0) return;
+      for (var i = 0; i < input.files.length; i++) {
+        (function(file) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            leavePhotosTemp.push({ name: file.name, data: e.target.result });
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:60px; height:60px; object-fit:cover; border-radius:4px; border:1px solid #ddd;';
+            preview.appendChild(img);
+          };
+          reader.readAsDataURL(file);
+        })(input.files[i]);
+      }
+    }
+
+    function submitLeave() {
+      var mode = document.getElementById('leaveMode').value;
+      var leave = {
+        id: 'LV' + Date.now(),
+        empId: APP.currentUser.id,
+        type: document.getElementById('leaveType').value,
+        mode: mode,
+        reason: document.getElementById('leaveReason').value,
+        photos: leavePhotosTemp.slice(),
+        status: 'pending'
+      };
+      if (mode === 'fullday') {
+        leave.from = document.getElementById('leaveStartDate').value;
+        leave.to = document.getElementById('leaveEndDate').value;
+        if (!leave.from || !leave.to) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (leave.to < leave.from) { showToast(t('endAfterStart'), 'error'); return; }
+        var d1 = new Date(leave.from); var d2 = new Date(leave.to);
+        leave.duration = Math.round((d2 - d1) / 86400000) + 1;
+        leave.durationText = leave.duration + ' ' + t('days');
+      } else {
+        leave.from = document.getElementById('leaveHourlyDate').value;
+        leave.to = leave.from;
+        leave.startTime = document.getElementById('leaveStartTime').value;
+        leave.endTime = document.getElementById('leaveEndTime').value;
+        if (!leave.from || !leave.startTime || !leave.endTime) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (leave.endTime <= leave.startTime) { showToast(t('endTimeAfterStart'), 'error'); return; }
+        var st = leave.startTime.split(':'); var et = leave.endTime.split(':');
+        var mins = (parseInt(et[0])*60 + parseInt(et[1])) - (parseInt(st[0])*60 + parseInt(st[1]));
+        var hrs = Math.floor(mins / 60); var rm = mins % 60;
+        leave.duration = mins / 60;
+        leave.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+      }
+      if (!leave.reason) { showToast(t('pleaseFillAll'), 'error'); return; }
+      APP.leaves.push(leave);
+      leavePhotosTemp = [];
+      showToast(t('leaveSubmitted'), 'success');
+      closeModal();
+      renderLeaveRequest();
+    }
+
+    function viewLeavePhotos(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave || !leave.photos || leave.photos.length === 0) {
+        showToast(t('noPhotos'), 'error');
+        return;
+      }
+      var emp = APP.employees.find(function(e) { return e.id === leave.empId; });
+      var empName = emp ? emp.name : 'Unknown';
+      var dateInfo = leave.from;
+      if (leave.mode === 'hourly') { dateInfo = leave.from + ' (' + (leave.startTime||'') + '-' + (leave.endTime||'') + ')'; }
+      else if (leave.to && leave.to !== leave.from) { dateInfo = leave.from + ' ~ ' + leave.to; }
+      var html = '<p style="margin-bottom:10px; color:#666;">' + empName + ' | ' + leave.type + ' | ' + dateInfo + '</p>';
+      html += '<div style="display:flex; flex-wrap:wrap; gap:10px;">';
+      leave.photos.forEach(function(photo, idx) {
+        html += '<div style="text-align:center;">';
+        html += '<img src="' + photo.data + '" style="max-width:200px; max-height:200px; border-radius:6px; border:1px solid #ddd; cursor:pointer;" onclick="openFullPhoto(\'' + leaveId + '\',' + idx + ')">';
+        html += '<br><small style="color:#666;">' + photo.name + '</small>';
+        html += '<br><a href="' + photo.data + '" download="' + photo.name + '" style="font-size:12px; color:#FF6C37; text-decoration:none; font-weight:600;">' + t('downloadPhoto') + '</a>';
+        html += '</div>';
+      });
+      html += '</div>';
+      html += '<div class="modal-footer" style="margin-top:15px;"><button class="btn btn-secondary" onclick="closeModal()">' + t('cancel') + '</button>';
+      html += '<button class="btn btn-primary" onclick="downloadAllLeavePhotos(\'' + leaveId + '\')">' + t('downloadPhoto') + ' All</button></div>';
+      openModal(t('evidence') + ' - ' + t('photos'), html);
+    }
+
+    function openFullPhoto(leaveId, idx) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave || !leave.photos || !leave.photos[idx]) return;
+      var photo = leave.photos[idx];
+      var html = '<div style="text-align:center;">';
+      html += '<img src="' + photo.data + '" style="max-width:100%; max-height:70vh; border-radius:6px;">';
+      html += '<br><br><a href="' + photo.data + '" download="' + photo.name + '" class="btn btn-primary btn-small">' + t('downloadPhoto') + ' - ' + photo.name + '</a>';
+      html += '</div>';
+      html += '<div class="modal-footer" style="margin-top:15px;"><button class="btn btn-secondary" onclick="viewLeavePhotos(\'' + leaveId + '\')">Back</button></div>';
+      openModal(photo.name, html);
+    }
+
+    function downloadAllLeavePhotos(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave || !leave.photos) return;
+      leave.photos.forEach(function(photo) {
+        var a = document.createElement('a');
+        a.href = photo.data;
+        a.download = 'evidence_' + leaveId + '_' + photo.name;
+        a.click();
+      });
+      addLog('evidence_download', 'Photos downloaded for leave ' + leaveId);
+      showToast(t('downloadPhoto') + ' - OK', 'success');
+    }
+
+    function renderOTRequest() {
+      const content = document.getElementById('content');
+      content.innerHTML = `
+        <button class="btn btn-primary mb-20" onclick="openOTModal()">${t('newOTRequest')}</button>
+        <div class="card">
+          <h3>${t('otRequest')}</h3>
+          <table>
+            <tr><th>${t('date')}</th><th>${t('startTime')}</th><th>${t('endTime')}</th><th>${t('reason')}</th><th>${t('status')}</th></tr>
+            ${APP.ots.filter(ot => ot.empId === APP.currentUser.id).map(ot => `<tr><td>${ot.date}</td><td>${ot.startTime}</td><td>${ot.endTime}</td><td>${ot.reason}</td><td><span class="badge badge-${ot.status}">${T[APP.lang][ot.status]}</span></td></tr>`).join('')}
+            ${APP.ots.filter(ot => ot.empId === APP.currentUser.id).length === 0 ? '<tr><td colspan="5">' + t('noData') + '</td></tr>' : ''}
+          </table>
+        </div>
+      `;
+    }
+
+    function openOTModal() {
+      const html = `
+        <div class="form-group"><label>${t('date')}</label><input type="date" id="otDate"></div>
+        <div class="form-group"><label>Start Time</label><input type="time" id="otStart"></div>
+        <div class="form-group"><label>End Time</label><input type="time" id="otEnd"></div>
+        <div class="form-group"><label>${t('reason')}</label><textarea id="otReason" rows="3"></textarea></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="submitOT()">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('otRequest'), html);
+    }
+
+    function submitOT() {
+      const ot = {
+        id: 'OT' + Date.now(),
+        empId: APP.currentUser.id,
+        date: document.getElementById('otDate').value,
+        startTime: document.getElementById('otStart').value,
+        endTime: document.getElementById('otEnd').value,
+        reason: document.getElementById('otReason').value,
+        status: 'pending'
+      };
+      if (!ot.date || !ot.startTime || !ot.endTime || !ot.reason) {
+        showToast(t('pleaseFillAll'), 'error');
+        return;
+      }
+      APP.ots.push(ot);
+      addLog('ot_request', `OT request submitted for ${ot.date}`);
+      showToast(t('otSubmitted'), 'success');
+      closeModal();
+      renderOTRequest();
+    }
+
+    var SHIFTS = {
+      'A': { label: 'A (07:00-16:00)', time: '07:00-16:00', color: '#27AE60', bg: 'rgba(39,174,96,0.15)' },
+      'B': { label: 'B (10:00-19:00)', time: '10:00-19:00', color: '#2980B9', bg: 'rgba(41,128,185,0.15)' },
+      'C': { label: 'C (12:00-21:00)', time: '12:00-21:00', color: '#8E44AD', bg: 'rgba(142,68,173,0.15)' },
+      'OFF': { label: 'OFF', time: '', color: '#999', bg: '#f5f5f5' }
+    };
+
+    let scheduleWeekStart = new Date();
+    scheduleWeekStart.setDate(scheduleWeekStart.getDate() - scheduleWeekStart.getDay() + 1);
+    var scheduleDeptFilter = 'all';
+
+    function getShiftDisplay(shiftKey) {
+      const s = SHIFTS[shiftKey];
+      if (!s) return { text: shiftKey, color: '#333', bg: '#fff' };
+      return { text: s.label, color: s.color, bg: s.bg };
+    }
+
+    function renderSchedule() {
+      const content = document.getElementById('content');
+      const weekStart = new Date(scheduleWeekStart);
+      const daysOfWeek = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+      const isHRorMD = (APP.currentUser.role === 'hr' || APP.currentUser.role === 'md');
+      const isDeptHead = (APP.currentUser.role === 'depthead');
+
+      // Get unique sections
+      var sections = [];
+      APP.employees.forEach(function(e) {
+        var sec = e.section || e.dept;
+        if (sections.indexOf(sec) === -1) sections.push(sec);
+      });
+      sections.sort();
+
+      // Section filter dropdown
+      var deptFilterHTML = '<select id="schedDeptFilter" onchange="scheduleDeptFilter=this.value; renderSchedule();" style="padding:8px; border-radius:4px; border:1px solid #ddd; font-family:inherit; font-size:14px;">';
+      deptFilterHTML += '<option value="all"' + (scheduleDeptFilter === 'all' ? ' selected' : '') + '>' + t('allSections') + '</option>';
+      sections.forEach(function(s) {
+        deptFilterHTML += '<option value="' + s + '"' + (scheduleDeptFilter === s ? ' selected' : '') + '>' + s + '</option>';
+      });
+      deptFilterHTML += '</select>';
+
+      // Filter employees by section
+      var filteredEmps = scheduleDeptFilter === 'all' ? APP.employees : APP.employees.filter(function(e) { return (e.section || e.dept) === scheduleDeptFilter; });
+
+      let headerHTML = '<thead><tr><th style="min-width:120px;">' + t('employee') + '</th>';
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        const dateStr = d.toISOString().split('T')[0];
+        headerHTML += `<th style="text-align:center;">${t(daysOfWeek[i])}<br><small>${dateStr}</small></th>`;
+      }
+      headerHTML += '</tr></thead>';
+
+      let tableHTML = '<tbody>';
+      filteredEmps.forEach(emp => {
+        tableHTML += `<tr><td><strong>${emp.nickname || emp.name}</strong><br><small style="color:#666;">${emp.section || emp.dept}</small></td>`;
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(weekStart);
+          d.setDate(d.getDate() + i);
+          const dateStr = d.toISOString().split('T')[0];
+          const scheduleData = APP.schedules.find(s => s.empId === emp.id && s.date === dateStr);
+          const shiftKey = scheduleData ? scheduleData.shift : 'OFF';
+          const display = getShiftDisplay(shiftKey);
+          const pendingChange = APP.pendingSchedules.find(ps => ps.empId === emp.id && ps.date === dateStr && ps.status === 'pending');
+          const pendingBadge = pendingChange ? '<br><span style="font-size:10px; color:#F39C12; font-weight:400;">\u23F3 ' + t('pendingApproval') + '</span>' : '';
+          const canEdit = isHRorMD || isDeptHead;
+          if (canEdit) {
+            tableHTML += `<td style="text-align:center; cursor:pointer; background:${display.bg}; border:1px solid #eee;" onclick="editScheduleCell('${emp.id}', '${dateStr}')"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${pendingBadge}</td>`;
+          } else {
+            tableHTML += `<td style="text-align:center; background:${display.bg};"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${pendingBadge}</td>`;
+          }
+        }
+        tableHTML += '</tr>';
+      });
+      if (filteredEmps.length === 0) {
+        tableHTML += '<tr><td colspan="8" style="text-align:center; color:#999;">' + t('noData') + '</td></tr>';
+      }
+      tableHTML += '</tbody>';
+
+      const formatDate = (d) => d.toISOString().split('T')[0];
+
+      let legendHTML = '<div style="display:flex; gap:15px; flex-wrap:wrap; margin-bottom:15px;">';
+      Object.keys(SHIFTS).forEach(key => {
+        const s = SHIFTS[key];
+        legendHTML += `<span style="display:inline-flex; align-items:center; gap:6px; font-size:13px;"><span style="display:inline-block; width:14px; height:14px; border-radius:3px; background:${s.bg}; border:2px solid ${s.color};"></span><strong style="color:${s.color};">${s.label}</strong></span>`;
+      });
+      legendHTML += '</div>';
+
+      // Build employee filter dropdown for individual download
+      let empFilterHTML = '<select id="schedEmpFilter" style="padding:8px; border-radius:4px; border:1px solid #ddd; font-family:inherit;">';
+      empFilterHTML += '<option value="all">' + t('allEmployeesOption') + '</option>';
+      filteredEmps.forEach(emp => {
+        empFilterHTML += `<option value="${emp.id}">${emp.name} (${emp.dept})</option>`;
+      });
+      empFilterHTML += '</select>';
+
+      content.innerHTML = `
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <button class="btn btn-secondary btn-small" onclick="changeScheduleWeek(-7)">${t('prevWeek')}</button>
+            <span style="font-weight:bold;">Week of ${formatDate(weekStart)}</span>
+            <button class="btn btn-secondary btn-small" onclick="changeScheduleWeek(7)">${t('nextWeek')}</button>
+          </div>
+          <div style="margin-bottom:15px;">
+            ${deptFilterHTML}
+            <span style="margin-left:10px; font-size:13px; color:#666;">${filteredEmps.length} ${t('employee')}</span>
+          </div>
+          ${legendHTML}
+          ${(isHRorMD || isDeptHead) ? '<p style="font-size:12px; color:#999; margin-bottom:10px;">Click a cell to change shift' + (isDeptHead ? ' (requires HR/MD approval)' : '') + '</p>' : ''}
+          <div style="overflow-x:auto;">
+            <table>${headerHTML}${tableHTML}</table>
+          </div>
+          <div style="margin-top:20px; padding-top:15px; border-top:1px solid #eee; display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <button class="btn btn-secondary btn-small" onclick="downloadWeeklyScheduleCSV('all')">Download ${scheduleDeptFilter === 'all' ? t('overall') : scheduleDeptFilter} Schedule (CSV)</button>
+            <span style="color:#999;">|</span>
+            ${empFilterHTML}
+            <button class="btn btn-secondary btn-small" onclick="downloadWeeklyScheduleCSV(document.getElementById('schedEmpFilter').value)">Download Selected Employee (CSV)</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function changeScheduleWeek(days) {
+      scheduleWeekStart.setDate(scheduleWeekStart.getDate() + days);
+      renderSchedule();
+    }
+
+    function downloadWeeklyScheduleCSV(empFilter) {
+      const weekStart = new Date(scheduleWeekStart);
+      const daysOfWeek = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+      const formatDate = (d) => d.toISOString().split('T')[0];
+
+      // Build date headers
+      var dateHeaders = [];
+      for (var i = 0; i < 7; i++) {
+        var d = new Date(weekStart);
+        d.setDate(d.getDate() + i);
+        dateHeaders.push(daysOfWeek[i] + ' ' + formatDate(d));
+      }
+
+      // Filter employees by selection and department filter
+      var emps = APP.employees;
+      if (scheduleDeptFilter && scheduleDeptFilter !== 'all') {
+        emps = emps.filter(function(e) { return (e.section || e.dept) === scheduleDeptFilter; });
+      }
+      if (empFilter && empFilter !== 'all') {
+        emps = emps.filter(function(e) { return e.id === empFilter; });
+      }
+
+      if (emps.length === 0) {
+        showToast(t('noEmployeeSelected'), 'error');
+        return;
+      }
+
+      // Build CSV rows
+      var headers = [t('employee'), t('department'), t('position')].concat(dateHeaders);
+      var rows = [headers.join(',')];
+
+      emps.forEach(function(emp) {
+        var row = ['"' + emp.name + '"', '"' + emp.dept + '"', '"' + (emp.pos || '') + '"'];
+        for (var i = 0; i < 7; i++) {
+          var d = new Date(weekStart);
+          d.setDate(d.getDate() + i);
+          var dateStr = formatDate(d);
+          var scheduleData = APP.schedules.find(function(s) { return s.empId === emp.id && s.date === dateStr; });
+          var shiftKey = scheduleData ? scheduleData.shift : 'OFF';
+          var shiftInfo = SHIFTS[shiftKey] ? SHIFTS[shiftKey].label : shiftKey;
+          row.push('"' + shiftInfo + '"');
+        }
+        rows.push(row.join(','));
+      });
+
+      var csv = rows.join('\n');
+      var filename = empFilter === 'all'
+        ? 'schedule_week_' + formatDate(weekStart) + '.csv'
+        : 'schedule_' + empFilter + '_week_' + formatDate(weekStart) + '.csv';
+
+      var a = document.createElement('a');
+      a.href = 'data:text/csv,' + encodeURIComponent(csv);
+      a.download = filename;
+      a.click();
+
+      addLog('report_download', 'Schedule CSV downloaded: ' + filename);
+      showToast(t('scheduleDownloaded'), 'success');
+    }
+
+    function editScheduleCell(empId, dateStr) {
+      const isHRorMD = (APP.currentUser.role === 'hr' || APP.currentUser.role === 'md');
+      const isDeptHead = (APP.currentUser.role === 'depthead');
+      if (!isHRorMD && !isDeptHead) return;
+      const emp = APP.employees.find(e => e.id === empId);
+
+      const scheduleData = APP.schedules.find(s => s.empId === empId && s.date === dateStr);
+      const currentValue = scheduleData ? scheduleData.shift : 'OFF';
+      const empName = emp ? emp.name : empId;
+
+      let optionsHTML = '';
+      Object.keys(SHIFTS).forEach(key => {
+        const s = SHIFTS[key];
+        const selected = key === currentValue ? 'selected' : '';
+        optionsHTML += `<option value="${key}" ${selected}>${s.label}</option>`;
+      });
+
+      const approvalNote = isDeptHead ? '<p style="margin-bottom:10px; padding:8px; background:rgba(243,156,18,0.1); border-radius:4px; font-size:13px; color:#F39C12;">\u26A0 ' + t('pendingApproval') + ' - HR/MD</p>' : '';
+
+      const html = `
+        <p style="margin-bottom:15px; color:#666;">${empName} - ${dateStr}</p>
+        ${approvalNote}
+        <div class="form-group">
+          <label>Select Shift</label>
+          <select id="shiftSelect" style="font-size:16px; padding:12px;">${optionsHTML}</select>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="saveScheduleCell('${empId}', '${dateStr}')">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('schedule') + ' - ' + t('edit'), html);
+    }
+
+    function saveScheduleCell(empId, dateStr) {
+      const newValue = document.getElementById('shiftSelect').value;
+      const isHRorMD = (APP.currentUser.role === 'hr' || APP.currentUser.role === 'md');
+
+      if (isHRorMD) {
+        // HR/MD: apply directly
+        const idx = APP.schedules.findIndex(s => s.empId === empId && s.date === dateStr);
+        if (idx >= 0) {
+          APP.schedules[idx].shift = newValue;
+        } else {
+          APP.schedules.push({empId: empId, date: dateStr, shift: newValue});
+        }
+        // Also remove any pending request for same cell
+        APP.pendingSchedules = APP.pendingSchedules.filter(function(ps) {
+          return !(ps.empId === empId && ps.date === dateStr && ps.status === 'pending');
+        });
+        addLog('schedule_update', 'Schedule updated: ' + empId + ' on ' + dateStr + ' -> Shift ' + newValue);
+        // Recalculate attendance late status for this employee+date
+        recalcAttendanceForEmployee(empId, dateStr);
+      } else {
+        // Dept head: submit as pending
+        const scheduleData = APP.schedules.find(s => s.empId === empId && s.date === dateStr);
+        const oldValue = scheduleData ? scheduleData.shift : 'OFF';
+        // Remove any existing pending for same cell from this user
+        APP.pendingSchedules = APP.pendingSchedules.filter(function(ps) {
+          return !(ps.empId === empId && ps.date === dateStr && ps.status === 'pending');
+        });
+        APP.pendingSchedules.push({
+          id: 'SC' + Date.now(),
+          empId: empId,
+          date: dateStr,
+          oldShift: oldValue,
+          newShift: newValue,
+          requestedBy: APP.currentUser.name,
+          requestedById: APP.currentUser.id,
+          status: 'pending',
+          createdAt: new Date().toISOString().split('T')[0]
+        });
+        addLog('schedule_request', 'Schedule change requested: ' + empId + ' on ' + dateStr + ' -> Shift ' + newValue + ' (pending approval)');
+        showToast(t('pendingApproval'), 'success');
+      }
+      closeModal();
+      renderSchedule();
+    }
+
+    function renderPublicHolidays() {
+      const content = document.getElementById('content');
+      let html = '<div class="stats-grid">';
+      APP.holidays.forEach(holiday => {
+        html += `<div class="stat-card"><div style="text-align:left;"><strong>${holiday.name}</strong><br><small>${holiday.date}</small></div></div>`;
+      });
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function renderDeptApprovals() {
+      const deptHeadDept = APP.currentUser.dept;
+      const pendingLeaves = APP.leaves.filter(l => l.status === 'pending');
+      const pendingOTs = APP.ots.filter(ot => ot.status === 'pending');
+
+      let html = `<div class="card"><h3>${t('leaveRequestsPending')}</h3><table><tr><th>${t('employee')}</th><th>${t('type')}</th><th>${t('date')}</th><th>${t('reason')}</th><th>${t('action')}</th></tr>`;
+      pendingLeaves.forEach(leave => {
+        const emp = APP.employees.find(e => e.id === leave.empId);
+        if (emp && emp.dept === deptHeadDept) {
+          html += `<tr><td>${emp.name}</td><td>${leave.type}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveDeptRequest('leave', '${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectDeptRequest('leave', '${leave.id}')">${t('reject')}</button></td></tr>`;
+        }
+      });
+      html += '</table></div>';
+
+      html += `<div class="card"><h3>${t('otRequestsPending')}</h3><table><tr><th>${t('employee')}</th><th>${t('date')}</th><th>${t('time')}</th><th>${t('reason')}</th><th>${t('action')}</th></tr>`;
+      pendingOTs.forEach(ot => {
+        const emp = APP.employees.find(e => e.id === ot.empId);
+        if (emp && emp.dept === deptHeadDept) {
+          html += `<tr><td>${emp.name}</td><td>${ot.date}</td><td>${ot.startTime}-${ot.endTime}</td><td>${ot.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveDeptRequest('ot', '${ot.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectDeptRequest('ot', '${ot.id}')">${t('reject')}</button></td></tr>`;
+        }
+      });
+      html += '</table></div>';
+
+      content.innerHTML = html;
+    }
+
+    function approveDeptRequest(type, id) {
+      if (type === 'leave') {
+        const leave = APP.leaves.find(l => l.id === id);
+        if (leave) leave.status = 'approved';
+      } else {
+        const ot = APP.ots.find(o => o.id === id);
+        if (ot) ot.status = 'approved';
+      }
+      addLog('approval', `${type} request ${id} approved by dept head`);
+      showToast(t('approved'), 'success');
+      renderDeptApprovals();
+    }
+
+    function rejectDeptRequest(type, id) {
+      if (type === 'leave') {
+        const leave = APP.leaves.find(l => l.id === id);
+        if (leave) leave.status = 'rejected';
+      } else {
+        const ot = APP.ots.find(o => o.id === id);
+        if (ot) ot.status = 'rejected';
+      }
+      addLog('rejection', `${type} request ${id} rejected by dept head`);
+      showToast(t('rejected'), 'success');
+      renderDeptApprovals();
+    }
+
+    function renderAllLeaveRequests() {
+      const content = document.getElementById('content');
+      var formatLeaveDate = function(lv) {
+        if (lv.mode === 'hourly') return lv.from + '<br><small style="color:#666;">' + (lv.startTime || '') + ' - ' + (lv.endTime || '') + '</small>';
+        if (lv.to && lv.to !== lv.from) return lv.from + ' ~ ' + lv.to;
+        return lv.from;
+      };
+      let html = `<div class="card"><h3>${t('allLeaveRequests')}</h3><div style="overflow-x:auto;"><table><tr><th>${t('employeeId')}</th><th>${t('employee')}</th><th>${t('type')}</th><th>${t('date')}</th><th>${t('duration')}</th><th>${t('reason')}</th><th>${t('evidence')}</th><th>${t('status')}</th><th>${t('action')}</th></tr>`;
+      APP.leaves.forEach(leave => {
+        const emp = APP.employees.find(e => e.id === leave.empId);
+        const photoCount = leave.photos ? leave.photos.length : 0;
+        const photoBtn = photoCount > 0 ? '<button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + leave.id + '\')">\u{1F4F7} ' + photoCount + ' ' + t('viewPhotos') + '</button>' : '<span style="color:#999;">-</span>';
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${leave.durationText || '-'}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${leave.status}">${T[APP.lang][leave.status]}</span></td><td>`;
+        if (leave.status === 'pending') {
+          html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
+        }
+        html += `</td></tr>`;
+      });
+      html += '</table></div></div>';
+      content.innerHTML = html;
+    }
+
+    function renderAllOTRequests() {
+      const content = document.getElementById('content');
+      let html = `<div class="card"><h3>${t('allOTRequests')}</h3><div style="overflow-x:auto;"><table><tr><th>${t('employeeId')}</th><th>${t('employee')}</th><th>${t('date')}</th><th>${t('time')}</th><th>${t('reason')}</th><th>${t('status')}</th><th>${t('action')}</th></tr>`;
+      APP.ots.forEach(ot => {
+        const emp = APP.employees.find(e => e.id === ot.empId);
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${ot.date}</td><td>${ot.startTime}-${ot.endTime}</td><td>${ot.reason}</td><td><span class="badge badge-${ot.status}">${T[APP.lang][ot.status]}</span></td><td>`;
+        if (ot.status === 'pending') {
+          html += `<button class="btn btn-approve btn-small" onclick="approveOT('${ot.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectOT('${ot.id}')">${t('reject')}</button>`;
+        }
+        html += `</td></tr>`;
+      });
+      html += '</table></div></div>';
+      content.innerHTML = html;
+    }
+
+    function canApprove() {
+      var r = APP.currentUser.role;
+      return r === 'hr' || r === 'md' || r === 'depthead';
+    }
+
+    function approveLeave(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDApprove'), 'error'); return; }
+      const leave = APP.leaves.find(l => l.id === id);
+      if (leave) leave.status = 'approved';
+      addLog('approval', `Leave request ${id} approved by ${APP.currentUser.role.toUpperCase()}`);
+      showToast(t('approved'), 'success');
+      renderAllLeaveRequests();
+    }
+
+    function rejectLeave(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDReject'), 'error'); return; }
+      const leave = APP.leaves.find(l => l.id === id);
+      if (leave) leave.status = 'rejected';
+      addLog('rejection', `Leave request ${id} rejected by ${APP.currentUser.role.toUpperCase()}`);
+      showToast(t('rejected'), 'success');
+      renderAllLeaveRequests();
+    }
+
+    function approveOT(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDApprove'), 'error'); return; }
+      const ot = APP.ots.find(o => o.id === id);
+      if (ot) {
+        ot.status = 'approved';
+        recalcAttendanceForEmployee(ot.empId, ot.date);
+      }
+      addLog('approval', `OT request ${id} approved by ${APP.currentUser.role.toUpperCase()}`);
+      showToast(t('approved'), 'success');
+      renderAllOTRequests();
+    }
+
+    function rejectOT(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDReject'), 'error'); return; }
+      const ot = APP.ots.find(o => o.id === id);
+      if (ot) {
+        ot.status = 'rejected';
+        recalcAttendanceForEmployee(ot.empId, ot.date);
+      }
+      addLog('rejection', `OT request ${id} rejected by ${APP.currentUser.role.toUpperCase()}`);
+      showToast(t('rejected'), 'success');
+      renderAllOTRequests();
+    }
+
+    function renderApprovals() {
+      const content = document.getElementById('content');
+      if (!APP.approvalTab) APP.approvalTab = 'leave';
+      const pendingSchedCount = APP.pendingSchedules.filter(ps => ps.status === 'pending').length;
+      const schedBadge = pendingSchedCount > 0 ? ' (' + pendingSchedCount + ')' : '';
+      let html = `
+        <div style="display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap;">
+          <button class="btn ${APP.approvalTab==='leave'?'btn-primary':'btn-secondary'} btn-small" onclick="APP.approvalTab='leave'; renderApprovals()">${t('leaveRequests')}</button>
+          <button class="btn ${APP.approvalTab==='ot'?'btn-primary':'btn-secondary'} btn-small" onclick="APP.approvalTab='ot'; renderApprovals()">${t('otRequestsLabel')}</button>
+          <button class="btn ${APP.approvalTab==='schedule'?'btn-primary':'btn-secondary'} btn-small" onclick="APP.approvalTab='schedule'; renderApprovals()">${t('pendingScheduleChanges')}${schedBadge}</button>
+        </div>
+      `;
+
+      if (APP.approvalTab === 'ot') {
+        html += `<div class="card"><h3>${t('otRequestsPending')}</h3><table><tr><th>${t('employee')}</th><th>${t('date')}</th><th>${t('time')}</th><th>${t('reason')}</th><th>${t('action')}</th></tr>`;
+        APP.ots.filter(ot => ot.status === 'pending').forEach(ot => {
+          const emp = APP.employees.find(e => e.id === ot.empId);
+          html += `<tr><td>${emp ? emp.name : t('unknown')}</td><td>${ot.date}</td><td>${ot.startTime}-${ot.endTime}</td><td>${ot.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveOT('${ot.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectOT('${ot.id}')">${t('reject')}</button></td></tr>`;
+        });
+        html += '</table></div>';
+      } else if (APP.approvalTab === 'schedule') {
+        html += `<div class="card"><h3>${t('pendingScheduleChanges')}</h3>`;
+        var pendingSched = APP.pendingSchedules.filter(ps => ps.status === 'pending');
+        if (pendingSched.length === 0) {
+          html += '<p style="color:#999; font-style:italic;">' + t('noData') + '</p>';
+        } else {
+          html += '<table><tr><th>' + t('employee') + '</th><th>' + t('date') + '</th><th>' + t('scheduleChangeFrom') + '</th><th>' + t('scheduleChangeTo') + '</th><th>' + t('requestedBy') + '</th><th>' + t('action') + '</th></tr>';
+          pendingSched.forEach(function(ps) {
+            var emp = APP.employees.find(function(e) { return e.id === ps.empId; });
+            var empName = emp ? emp.name : ps.empId;
+            var oldDisplay = SHIFTS[ps.oldShift] ? SHIFTS[ps.oldShift].label : ps.oldShift;
+            var newDisplay = SHIFTS[ps.newShift] ? SHIFTS[ps.newShift].label : ps.newShift;
+            html += '<tr><td>' + empName + '</td><td>' + ps.date + '</td><td>' + oldDisplay + '</td><td><strong>' + newDisplay + '</strong></td><td>' + ps.requestedBy + '</td><td><button class="btn btn-approve btn-small" onclick="approveScheduleChange(\'' + ps.id + '\')">' + t('approve') + '</button> <button class="btn btn-reject btn-small" onclick="rejectScheduleChange(\'' + ps.id + '\')">' + t('reject') + '</button></td></tr>';
+          });
+          html += '</table>';
+        }
+        html += '</div>';
+      } else {
+        html += `<div class="card"><h3>${t('leaveRequestsPending')}</h3><table><tr><th>${t('employee')}</th><th>${t('type')}</th><th>${t('date')}</th><th>${t('reason')}</th><th>${t('action')}</th></tr>`;
+        APP.leaves.filter(l => l.status === 'pending').forEach(leave => {
+          const emp = APP.employees.find(e => e.id === leave.empId);
+          html += `<tr><td>${emp ? emp.name : t('unknown')}</td><td>${leave.type}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button></td></tr>`;
+        });
+        html += '</table></div>';
+      }
+
+      content.innerHTML = html;
+    }
+
+    function approveScheduleChange(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDApprove'), 'error'); return; }
+      var ps = APP.pendingSchedules.find(function(s) { return s.id === id; });
+      if (!ps) return;
+      // Apply the schedule change
+      var idx = APP.schedules.findIndex(function(s) { return s.empId === ps.empId && s.date === ps.date; });
+      if (idx >= 0) {
+        APP.schedules[idx].shift = ps.newShift;
+      } else {
+        APP.schedules.push({empId: ps.empId, date: ps.date, shift: ps.newShift});
+      }
+      ps.status = 'approved';
+      // Recalculate attendance for this employee+date
+      recalcAttendanceForEmployee(ps.empId, ps.date);
+      addLog('schedule_approval', 'Schedule change approved: ' + ps.empId + ' on ' + ps.date + ' -> Shift ' + ps.newShift + ' (requested by ' + ps.requestedBy + ')');
+      showToast(t('approve') + ' - OK', 'success');
+      renderApprovals();
+    }
+
+    function rejectScheduleChange(id) {
+      if (!canApprove()) { showToast(t('onlyHRMDReject'), 'error'); return; }
+      var ps = APP.pendingSchedules.find(function(s) { return s.id === id; });
+      if (!ps) return;
+      ps.status = 'rejected';
+      addLog('schedule_rejection', 'Schedule change rejected: ' + ps.empId + ' on ' + ps.date + ' (requested by ' + ps.requestedBy + ')');
+      showToast(t('reject') + ' - OK', 'success');
+      renderApprovals();
+    }
+
+    function renderScheduleManagement() {
+      renderSchedule();
+    }
+
+    function renderEmployeeManagement() {
+      const content = document.getElementById('content');
+      const isHRMD = APP.currentUser.role === 'hr' || APP.currentUser.role === 'md';
+      let html = `<div class="card"><h3>${t('employeeManagement')}</h3>`;
+      html += `<div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap:wrap; align-items:flex-end;">`;
+      html += `<div class="form-group" style="margin-bottom:0; flex:1; min-width:200px;"><label style="font-size:12px;">${t('searchIdNameNickname')}</label><input type="text" id="empSearch" placeholder="e.g. 10004 or มะแอ้" style="padding:8px;" oninput="filterEmployeeTable()"></div>`;
+      html += `<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">${t('department')}</label><select id="empDeptFilter" style="padding:8px;" onchange="filterEmployeeTable()"><option value="all">${t('all')}</option>`;
+      APP.departments.sort();
+      APP.departments.forEach(function(d) { html += '<option value="' + d + '">' + d + '</option>'; });
+      html += `</select></div>`;
+      html += `<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">${t('role')}</label><select id="empRoleFilter" style="padding:8px;" onchange="filterEmployeeTable()"><option value="all">${t('all')}</option><option value="employee">${t('employee')}</option><option value="depthead">${t('deptHead')}</option><option value="hr">${t('hr')}</option><option value="md">${t('md')}</option><option value="admin">${t('admin')}</option></select></div>`;
+      html += `</div>`;
+      html += `<div id="empTableArea" style="overflow-x:auto;"></div></div>`;
+
+      // Department Management — HR/MD only
+      if (isHRMD) {
+        html += `<div class="card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">`;
+        html += `<h3 style="margin-bottom:0;">\u{1F3E2} ${t('manageDepartments')}</h3>`;
+        html += `<button class="btn btn-primary btn-small" onclick="openDeptModal()">${t('addDepartment')}</button>`;
+        html += `</div>`;
+        html += `<div style="overflow-x:auto;"><table><tr><th>#</th><th>${t('deptName')}</th><th>${t('employees')}</th><th>${t('action')}</th></tr>`;
+        APP.departments.sort().forEach(function(d, i) {
+          var empCount = APP.employees.filter(function(e) { return e.dept === d; }).length;
+          html += '<tr><td>' + (i + 1) + '</td><td><strong>' + d + '</strong></td><td>' + empCount + '</td>';
+          html += '<td><button class="btn btn-secondary btn-small" onclick="openDeptModal(\'' + d.replace(/'/g, "\\'") + '\')">' + t('edit') + '</button> ';
+          html += '<button class="btn btn-reject btn-small" onclick="deleteDept(\'' + d.replace(/'/g, "\\'") + '\')">' + t('delete') + '</button></td></tr>';
+        });
+        html += '</table></div></div>';
+      }
+
+      content.innerHTML = html;
+      filterEmployeeTable();
+    }
+
+    function openDeptModal(existingName) {
+      var modal = document.getElementById('modal');
+      var isEdit = !!existingName;
+      var title = isEdit ? t('editDepartment') : t('addDepartment');
+      modal.innerHTML = '<div class="modal-content" style="max-width:400px;">' +
+        '<h3>' + title + '</h3>' +
+        '<div class="form-group"><label>' + t('deptName') + '</label><input type="text" id="deptNameInput" value="' + (existingName || '') + '" style="padding:10px;"></div>' +
+        '<div class="modal-footer">' +
+        '<button class="btn btn-secondary" onclick="closeModal()">' + t('cancel') + '</button>' +
+        '<button class="btn btn-primary" onclick="saveDept(\'' + (existingName ? existingName.replace(/'/g, "\\'") : '') + '\')">' + t('submit') + '</button>' +
+        '</div></div>';
+      modal.style.display = 'flex';
+    }
+
+    function saveDept(oldName) {
+      var newName = document.getElementById('deptNameInput').value.trim();
+      if (!newName) { showToast(t('enterDeptName'), 'error'); return; }
+      var isEdit = !!oldName;
+
+      if (isEdit) {
+        if (newName !== oldName && APP.departments.indexOf(newName) > -1) { showToast(t('deptExists'), 'error'); return; }
+        var idx = APP.departments.indexOf(oldName);
+        if (idx > -1) APP.departments[idx] = newName;
+        // Update all employees with the old department name
+        APP.employees.forEach(function(e) { if (e.dept === oldName) e.dept = newName; });
+        addLog('dept_update', 'Department renamed: ' + oldName + ' -> ' + newName);
+        showToast(t('deptUpdated'), 'success');
+      } else {
+        if (APP.departments.indexOf(newName) > -1) { showToast(t('deptExists'), 'error'); return; }
+        APP.departments.push(newName);
+        addLog('dept_add', 'Department added: ' + newName);
+        showToast(t('deptAdded'), 'success');
+      }
+      closeModal();
+      renderEmployeeManagement();
+    }
+
+    function deleteDept(name) {
+      var empCount = APP.employees.filter(function(e) { return e.dept === name; }).length;
+      if (empCount > 0) { showToast(t('deptInUse') + ' (' + empCount + ')', 'error'); return; }
+      if (!confirm(t('confirmDelete') + ' "' + name + '"?')) return;
+      var idx = APP.departments.indexOf(name);
+      if (idx > -1) APP.departments.splice(idx, 1);
+      addLog('dept_delete', 'Department deleted: ' + name);
+      showToast(t('deptDeleted'), 'success');
+      renderEmployeeManagement();
+    }
+
+    function filterEmployeeTable() {
+      var search = (document.getElementById('empSearch').value || '').trim().toLowerCase();
+      var deptFilter = document.getElementById('empDeptFilter').value;
+      var roleFilter = document.getElementById('empRoleFilter').value;
+      var filtered = APP.employees.filter(function(emp) {
+        if (deptFilter !== 'all' && emp.dept !== deptFilter) return false;
+        if (roleFilter !== 'all' && emp.role !== roleFilter) return false;
+        if (search) {
+          var haystack = [emp.empId, emp.fingerprintId, emp.name, emp.nickname, emp.username].join(' ').toLowerCase();
+          if (haystack.indexOf(search) === -1) return false;
+        }
+        return true;
+      });
+      var html = `<table><tr><th></th><th>${t('employeeId')}</th><th>${t('fingerprint')}</th><th>${t('fullName')}</th><th>${t('nickname')}</th><th>${t('department')}</th><th>${t('section')}</th><th>${t('position')}</th><th>${t('level')}</th><th>${t('role')}</th><th>${t('empStartDate')}</th><th>${t('action')}</th></tr>`;
+      filtered.forEach(function(emp) {
+        var avatarHTML = emp.photo ? '<img src="' + emp.photo + '" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">' : '<div style="width:35px; height:35px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">' + emp.name.charAt(0).toUpperCase() + '</div>';
+        html += '<tr><td>' + avatarHTML + '</td><td>' + (emp.empId || '-') + '</td><td>' + (emp.fingerprintId || '-') + '</td><td>' + emp.name + '</td><td>' + (emp.nickname || '-') + '</td><td>' + emp.dept + '</td><td>' + (emp.section || '-') + '</td><td>' + emp.pos + '</td><td>' + (emp.level || '-') + '</td><td>' + emp.role + '</td><td>' + (emp.startDate || '-') + '</td><td><button class="btn btn-secondary btn-small" onclick="editEmployee(\'' + emp.id + '\')">' + t('edit') + '</button> <button class="btn btn-danger btn-small" onclick="deleteEmployee(\'' + emp.id + '\')">' + t('delete') + '</button></td></tr>';
+      });
+      html += '</table>';
+      html += '<div style="margin-top:10px; color:#666; font-size:13px;">' + filtered.length + ' / ' + APP.employees.length + ' ' + t('employees') + '</div>';
+      document.getElementById('empTableArea').innerHTML = html;
+    }
+
+    function deleteEmployee(id) {
+      if (confirm(t('confirmDelete'))) {
+        const idx = APP.employees.findIndex(e => e.id === id);
+        if (idx >= 0) {
+          const emp = APP.employees[idx];
+          APP.employees.splice(idx, 1);
+          addLog('employee_delete', `Employee ${emp.name} (${emp.id}) deleted`);
+          showToast(t('employeeDeleted'), 'success');
+          renderEmployeeManagement();
+        }
+      }
+    }
+
+    function editEmployee(id) {
+      const emp = APP.employees.find(e => e.id === id);
+      if (!emp) return;
+      const deptOptions = APP.departments.map(d => `<option value="${d}" ${emp.dept===d?'selected':''}>${d}</option>`).join('');
+      const roleOptions = ['employee','depthead','hr','md','admin'].map(r => `<option value="${r}" ${emp.role===r?'selected':''}>${r}</option>`).join('');
+      const natOptions = ['Thai','Myanmar','Cambodian','Laos','Other'].map(n => `<option value="${n}" ${emp.nationality===n?'selected':''}>${n}</option>`).join('');
+      var photoHTML = '<div class="form-group" style="text-align:center;"><label>' + t('profilePicture') + '</label><div style="margin:10px auto;">';
+      if (emp.photo) {
+        photoHTML += '<img id="editPhotoPreview" src="' + emp.photo + '" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #FF6C37;">';
+      } else {
+        photoHTML += '<div id="editPhotoPreview" style="width:80px; height:80px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:28px; font-weight:700;">' + emp.name.charAt(0).toUpperCase() + '</div>';
+      }
+      photoHTML += '</div><input type="file" id="editPhotoFile" accept="image/*" onchange="previewEditPhoto(this)" style="display:none;">';
+      photoHTML += '<button class="btn btn-secondary btn-small" type="button" onclick="document.getElementById(\'editPhotoFile\').click()">' + t('uploadPhoto') + '</button>';
+      if (emp.photo) photoHTML += ' <button class="btn btn-danger btn-small" type="button" onclick="removeEditPhoto()">' + t('removePhoto') + '</button>';
+      photoHTML += '</div>';
+      const html = photoHTML + `
+        <div class="form-group"><label>${t('employeeId')}</label><input type="text" id="editEmpId" value="${emp.empId || ''}"></div>
+        <div class="form-group"><label>${t('fingerprintId')}</label><input type="text" id="editFingerprintId" value="${emp.fingerprintId || ''}"></div>
+        <div class="form-group"><label>${t('nickname')}</label><input type="text" id="editNickname" value="${emp.nickname || ''}"></div>
+        <div class="form-group"><label>${t('username')}</label><input type="text" id="editUsername" value="${emp.username || ''}"></div>
+        <div class="form-group"><label>${t('passwordField')}</label><input type="text" id="editPassword" value="${emp.password || ''}"></div>
+        <div class="form-group"><label>${t('fullName')}</label><input type="text" id="editName" value="${emp.name || ''}"></div>
+        <div class="form-group"><label>${t('department')}</label><select id="editDept">${deptOptions}</select></div>
+        <div class="form-group"><label>${t('section')}</label><input type="text" id="editSection" value="${emp.section || ''}" placeholder="${t('sectionPlaceholder')}"></div>
+        <div class="form-group"><label>${t('position')}</label><input type="text" id="editPos" value="${emp.pos || ''}"></div>
+        <div class="form-group"><label>${t('role')}</label><select id="editRole">${roleOptions}</select></div>
+        <div class="form-group"><label>${t('phone')}</label><input type="text" id="editPhone" value="${emp.phone || ''}"></div>
+        <div class="form-group"><label>${t('email')}</label><input type="email" id="editEmail" value="${emp.email || ''}"></div>
+        <div class="form-group"><label>${t('lineId')}</label><input type="text" id="editLineId" value="${emp.lineId || ''}"></div>
+        <div class="form-group"><label>${t('birthday')}</label><input type="date" id="editBirthday" value="${emp.birthday || ''}"></div>
+        <div class="form-group"><label>${t('nationality')}</label><select id="editNationality">${natOptions}</select></div>
+        <div class="form-group"><label>${t('address')}</label><textarea id="editAddress" rows="2">${emp.address || ''}</textarea></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="saveEmployee('${emp.id}')">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('edit') + ' - ' + emp.name, html);
+    }
+
+    var editPhotoTemp = null;
+
+    function previewEditPhoto(input) {
+      if (!input.files || input.files.length === 0) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        editPhotoTemp = e.target.result;
+        var preview = document.getElementById('editPhotoPreview');
+        if (preview.tagName === 'IMG') {
+          preview.src = editPhotoTemp;
+        } else {
+          preview.outerHTML = '<img id="editPhotoPreview" src="' + editPhotoTemp + '" style="width:80px; height:80px; border-radius:50%; object-fit:cover; border:3px solid #FF6C37;">';
+        }
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    function removeEditPhoto() {
+      editPhotoTemp = 'REMOVE';
+      var preview = document.getElementById('editPhotoPreview');
+      preview.outerHTML = '<div id="editPhotoPreview" style="width:80px; height:80px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:28px; font-weight:700;">?</div>';
+    }
+
+    function saveEmployee(id) {
+      const emp = APP.employees.find(e => e.id === id);
+      if (!emp) return;
+      emp.empId = document.getElementById('editEmpId').value.trim();
+      emp.fingerprintId = document.getElementById('editFingerprintId').value.trim();
+      emp.nickname = document.getElementById('editNickname').value.trim();
+      emp.username = document.getElementById('editUsername').value.trim();
+      emp.password = document.getElementById('editPassword').value;
+      emp.name = document.getElementById('editName').value.trim();
+      emp.dept = document.getElementById('editDept').value;
+      emp.section = document.getElementById('editSection').value.trim();
+      emp.pos = document.getElementById('editPos').value.trim();
+      emp.role = document.getElementById('editRole').value;
+      emp.phone = document.getElementById('editPhone').value.trim();
+      emp.email = document.getElementById('editEmail').value.trim();
+      emp.lineId = document.getElementById('editLineId').value.trim();
+      emp.birthday = document.getElementById('editBirthday').value;
+      emp.nationality = document.getElementById('editNationality').value;
+      emp.address = document.getElementById('editAddress').value.trim();
+      if (editPhotoTemp === 'REMOVE') { emp.photo = null; }
+      else if (editPhotoTemp) { emp.photo = editPhotoTemp; }
+      editPhotoTemp = null;
+      if (APP.currentUser.id === emp.id) { APP.currentUser = emp; updateSidebarAvatar(emp); }
+      addLog('employee_update', `Employee ${emp.name} (${emp.id}) updated`);
+      showToast(t('employeeUpdated'), 'success');
+      closeModal();
+      renderEmployeeManagement();
+    }
+
+    function renderAttendance() {
+      var content = document.getElementById('content');
+      var range = getDefaultDateRange();
+      var html = '<div class="card">';
+      html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">';
+      html += '<h3 style="margin-bottom:0;">\u{1F4CB} ' + t('attendance') + '</h3>';
+      html += '<div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">';
+      html += '<input type="file" id="attendanceFile" accept=".xlsx,.xls,.csv" style="display:none;" onchange="processAttendanceFile(this)">';
+      html += '<button class="btn btn-primary btn-small" onclick="document.getElementById(\'attendanceFile\').click()">\u{1F4C2} ' + t('uploadAttendance') + '</button>';
+      if (APP.attendance.length > 0) {
+        html += '<button class="btn btn-secondary btn-small" onclick="recalcAllAttendance(); renderAttendance();" title="Recalculate late status based on current schedules">\u{1F504} ' + t('recalcSchedule') + '</button>';
+      }
+      html += '</div></div>';
+      html += '<div style="padding:8px 12px; background:rgba(0,55,100,0.05); border-radius:4px; margin-bottom:12px; font-size:13px; color:#666;">';
+      html += '\u{1F517} ' + t('attendanceNote');
+      html += '</div>';
+
+      // Date filter
+      html += '<div style="display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; margin-bottom:15px; padding:10px; background:#f9f9f9; border-radius:6px;">';
+      html += '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">' + t('from') + '</label><input type="date" id="attFrom" value="' + range.from + '" style="padding:8px;"></div>';
+      html += '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">' + t('to') + '</label><input type="date" id="attTo" value="' + range.to + '" style="padding:8px;"></div>';
+      html += '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">' + t('employee') + '</label><select id="attEmpFilter" style="padding:8px;"><option value="all">' + t('all') + '</option>';
+      APP.employees.forEach(function(e) { html += '<option value="' + e.id + '">' + (e.empId || '') + ' ' + (e.nickname || '') + ' ' + e.name + '</option>'; });
+      html += '</select></div>';
+      html += '<div class="form-group" style="margin-bottom:0;"><label style="font-size:12px;">' + t('search') + '</label><input type="text" id="attSearch" placeholder="' + t('idSlashName') + '" style="padding:8px; width:150px;" oninput="renderAttendanceTable()"></div>';
+      html += '<button class="btn btn-primary btn-small" onclick="renderAttendanceTable()" style="height:36px;">' + t('submit') + '</button>';
+      html += '</div>';
+
+      // Late today summary
+      var today = new Date().toISOString().split('T')[0];
+      var lateToday = APP.attendance.filter(function(a) { return a.date === today && (a.status === 'late' || a.status === 'late+ot'); });
+      if (lateToday.length > 0) {
+        html += '<div style="background:rgba(231,76,60,0.08); border:1px solid rgba(231,76,60,0.3); border-radius:6px; padding:12px; margin-bottom:15px;">';
+        html += '<strong style="color:#E74C3C;">\u26A0 ' + t('lateToday') + ' (' + lateToday.length + ')</strong><br>';
+        lateToday.forEach(function(a) {
+          var emp = APP.employees.find(function(e) { return e.id === a.empId; });
+          html += '<span style="display:inline-block; background:white; padding:3px 10px; border-radius:12px; margin:4px 4px 0 0; font-size:13px;">' + (emp ? (emp.empId || '') + ' ' + emp.name : a.empId) + ' <small style="color:#E74C3C;">(' + a.checkIn + ' / ' + t('scheduled') + ' ' + a.shiftStart + ')</small></span> ';
+        });
+        html += '</div>';
+      }
+
+      // OFF day but scanned — notify HR
+      var offDayScans = APP.attendance.filter(function(a) { return a.status === 'dayoff+scan'; });
+      if (offDayScans.length > 0) {
+        html += '<div style="background:rgba(142,68,173,0.08); border:1px solid rgba(142,68,173,0.3); border-radius:6px; padding:12px; margin-bottom:15px;">';
+        html += '<strong style="color:#8E44AD;">\u{1F514} ' + t('offDayScanTitle') + ' (' + offDayScans.length + ')</strong>';
+        html += '<p style="font-size:12px; color:#666; margin:4px 0 8px;">' + t('offDayScanNote') + '</p>';
+        // Group by employee for cleaner display
+        var byEmp = {};
+        offDayScans.forEach(function(a) {
+          var key = a.empId;
+          if (!byEmp[key]) byEmp[key] = [];
+          byEmp[key].push(a);
+        });
+        Object.keys(byEmp).forEach(function(empId) {
+          var records = byEmp[empId];
+          var emp = APP.employees.find(function(e) { return e.id === empId; });
+          var empLabel = emp ? (emp.empId || '') + ' ' + (emp.nickname || emp.name) : empId;
+          var dates = records.map(function(r) { return r.date + ' (' + (r.checkIn || '?') + (r.checkOut ? '-' + r.checkOut : '') + ')'; }).join(', ');
+          html += '<div style="background:white; padding:6px 12px; border-radius:8px; margin:4px 0; font-size:13px;">';
+          html += '<strong>' + empLabel + '</strong> — ' + dates;
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+
+      // Data summary
+      if (APP.attendance.length > 0) {
+        var totalRec = APP.attendance.length;
+        var withCheckIn = APP.attendance.filter(function(a) { return a.checkIn; }).length;
+        var lateCount = APP.attendance.filter(function(a) { return a.status === 'late' || a.status === 'late+ot'; }).length;
+        var ontimeCount = APP.attendance.filter(function(a) { return a.status === 'ontime' || a.status === 'ontime+ot'; }).length;
+        var dayoffCount = APP.attendance.filter(function(a) { return a.status === 'dayoff'; }).length;
+        var otCount = APP.attendance.filter(function(a) { return a.status === 'ot' || a.status === 'ontime+ot' || a.status === 'late+ot'; }).length;
+        html += '<div class="stats-grid" style="margin-bottom:15px;">';
+        html += '<div class="stat-card"><div class="stat-number">' + totalRec + '</div><div class="stat-label">' + t('total') + ' ' + t('records') + '</div></div>';
+        html += '<div class="stat-card"><div class="stat-number">' + withCheckIn + '</div><div class="stat-label">' + t('checkIn') + '</div></div>';
+        html += '<div class="stat-card" style="border-top-color:#27AE60;"><div class="stat-number" style="color:#27AE60;">' + ontimeCount + '</div><div class="stat-label">' + t('ontime') + '</div></div>';
+        html += '<div class="stat-card" style="border-top-color:#E74C3C;"><div class="stat-number" style="color:#E74C3C;">' + lateCount + '</div><div class="stat-label">' + t('late') + '</div></div>';
+        html += '<div class="stat-card" style="border-top-color:#7F8C8D;"><div class="stat-number" style="color:#7F8C8D;">' + dayoffCount + '</div><div class="stat-label">' + t('dayoff') + '</div></div>';
+        html += '<div class="stat-card" style="border-top-color:#2980B9;"><div class="stat-number" style="color:#2980B9;">' + otCount + '</div><div class="stat-label">OT</div></div>';
+        html += '</div>';
+      }
+      html += '<div id="attendanceTableArea"></div>';
+
+      // Download buttons
+      html += '<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:15px;">';
+      html += '<button class="btn btn-secondary btn-small" onclick="downloadAttendanceReport(\'all\')">\u{1F4CB} ' + t('allEmployeesReport') + '</button>';
+      html += '<button class="btn btn-secondary btn-small" onclick="downloadAttendanceReport(\'individual\')">\u{1F4CB} ' + t('individualReport') + '</button>';
+      html += '<button class="btn btn-secondary btn-small" onclick="downloadLateSummaryReport()">\u{1F6A8} ' + t('lateSummary') + '</button>';
+      html += '</div>';
+
+      html += '</div>';
+      content.innerHTML = html;
+      renderAttendanceTable();
+    }
+
+    function renderAttendanceTable() {
+      var from = document.getElementById('attFrom') ? document.getElementById('attFrom').value : '';
+      var to = document.getElementById('attTo') ? document.getElementById('attTo').value : '';
+      var empFilter = document.getElementById('attEmpFilter') ? document.getElementById('attEmpFilter').value : 'all';
+      var area = document.getElementById('attendanceTableArea');
+      if (!area) return;
+
+      var searchVal = (document.getElementById('attSearch') ? document.getElementById('attSearch').value : '').trim().toLowerCase();
+
+      var filtered = APP.attendance.filter(function(a) {
+        if (from && a.date < from) return false;
+        if (to && a.date > to) return false;
+        if (empFilter !== 'all' && a.empId !== empFilter) return false;
+        if (searchVal) {
+          var emp = APP.employees.find(function(e) { return e.id === a.empId; });
+          var haystack = [a.empId, a.empName, a.fingerprintId, emp ? emp.name : '', emp ? emp.nickname : '', emp ? emp.empId : ''].join(' ').toLowerCase();
+          if (haystack.indexOf(searchVal) === -1) return false;
+        }
+        return true;
+      });
+
+      // Sort by employee name, then date ascending
+      filtered.sort(function(a, b) {
+        var nameA = (a.empName || a.empId || '').toLowerCase();
+        var nameB = (b.empName || b.empId || '').toLowerCase();
+        if (nameA < nameB) return -1;
+        if (nameA > nameB) return 1;
+        if (a.date < b.date) return -1;
+        if (a.date > b.date) return 1;
+        return 0;
+      });
+
+      var html = '<div style="overflow-x:auto;"><table>';
+      html += '<tr><th>ID</th><th>' + t('employee') + '</th><th>' + t('nickname') + '</th><th>' + t('date') + '</th><th>' + t('shift') + '</th><th>' + t('shiftTime') + '</th><th>' + t('checkIn') + '</th><th>' + t('checkOut') + '</th><th>' + t('status') + '</th><th>' + t('lateBy') + '</th></tr>';
+      filtered.forEach(function(a) {
+        var emp = APP.employees.find(function(e) { return e.id === a.empId; });
+        var badge = 'badge-pending';
+        var statusText = '-';
+        if (a.status === 'late') { badge = 'badge-late'; statusText = t('late'); }
+        else if (a.status === 'ontime') { badge = 'badge-ontime'; statusText = t('ontime'); }
+        else if (a.status === 'dayoff') { badge = 'badge-dayoff'; statusText = t('dayoff'); }
+        else if (a.status === 'ot') { badge = 'badge-ot'; statusText = 'OT'; }
+        else if (a.status === 'ontime+ot') { badge = 'badge-ot'; statusText = t('ontime') + ' + OT'; }
+        else if (a.status === 'late+ot') { badge = 'badge-lateot'; statusText = t('late') + ' + OT'; }
+        else if (a.status === 'dayoff+scan') { badge = 'badge-dayoffscan'; statusText = 'OFF + ' + t('checkIn'); }
+        var lateMin = a.lateMinutes > 0 ? a.lateMinutes + ' ' + t('minutes') : '-';
+        var shiftLabel = (a.shift || '-');
+        if (a.shiftSource === 'default') shiftLabel += ' <span style="font-size:10px; color:#F39C12;" title="Default — no schedule assigned">*</span>';
+        html += '<tr><td>' + (emp ? (emp.empId || '') : a.fingerprintId || '-') + '</td><td>' + (emp ? emp.name : a.empName || a.empId) + '</td><td>' + (emp ? (emp.nickname || '-') : '-') + '</td><td>' + a.date + '</td><td>' + shiftLabel + '</td><td>' + (a.shiftStart || '-') + '</td><td>' + (a.checkIn || '-') + '</td><td>' + (a.checkOut || '-') + '</td><td><span class="badge ' + badge + '">' + statusText + '</span></td><td>' + lateMin + '</td></tr>';
+      });
+      if (filtered.length === 0) html += '<tr><td colspan="9" style="text-align:center; color:#999;">' + t('noData') + '</td></tr>';
+      html += '</table></div>';
+      html += '<p style="font-size:12px; color:#999; margin-top:8px;">' + filtered.length + ' ' + t('records') + '</p>';
+      area.innerHTML = html;
+    }
+
+    function processAttendanceFile(input) {
+      if (!input.files || input.files.length === 0) return;
+      var file = input.files[0];
+      showToast(t('readingFile') + ': ' + file.name + '...', 'success');
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var data = new Uint8Array(e.target.result);
+          parseAttendanceData(data, file.name);
+        } catch(err) {
+          showToast(t('errorReadingFile') + ': ' + err.message, 'error');
+        }
+      };
+      reader.onerror = function() { showToast(t('errorReadingFile'), 'error'); };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function parseAttendanceData(data, filename) {
+      if (typeof XLSX === 'undefined') {
+        showToast(t('loadingExcelParser'), 'success');
+        var script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        script.onload = function() {
+          showToast(t('excelParserLoaded'), 'success');
+          parseAttendanceXLSX(data, filename);
+        };
+        script.onerror = function() { showToast(t('excelParserError'), 'error'); };
+        document.head.appendChild(script);
+      } else {
+        parseAttendanceXLSX(data, filename);
+      }
+    }
+
+    function formatDateToISO(val) {
+      if (!val) return '';
+      var s = String(val);
+      // Already ISO format yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.substring(0, 10);
+      // Try parsing as Date
+      var d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + day;
+      }
+      // Try dd/mm/yyyy or mm/dd/yyyy
+      var parts = s.split(/[\/\-\.]/);
+      if (parts.length === 3) {
+        if (parts[0].length === 4) return parts[0] + '-' + parts[1].padStart(2,'0') + '-' + parts[2].padStart(2,'0');
+        if (parts[2].length === 4) return parts[2] + '-' + parts[1].padStart(2,'0') + '-' + parts[0].padStart(2,'0');
+      }
+      return '';
+    }
+
+    function parseAttendanceXLSX(data, filename) {
+      try {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[workbook.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+        var records = [];
+
+        // Detect format: check if row 0 has "AC-No" header (flat format from fingerprint machine)
+        var header0 = String(rows[0] && rows[0][0] || '').trim();
+        var isFlatFormat = (header0 === 'AC-No');
+
+        if (isFlatFormat) {
+          // === FLAT FORMAT from fingerprint scanner ===
+          // Row 0: AC-No | Name | Department | Date | Time
+          // Row N: "10004" | "10004" | "SALTSURF" | "2026-02-21" | "06:52 18:18"
+          // AC-No = fingerprintId, Time = space-separated HH:MM values
+          var matchedIds = {};
+          var unmatchedIds = {};
+
+          for (var i = 1; i < rows.length; i++) {
+            var row = rows[i];
+            if (!row || row.length < 4) continue;
+
+            var acNo = String(row[0] != null ? row[0] : '').trim();
+            if (!acNo) continue;
+
+            // Parse date
+            var rawDate = row[3];
+            var dateVal = '';
+            if (typeof rawDate === 'number') {
+              var excelEpoch = new Date(1899, 11, 30);
+              var jsDate = new Date(excelEpoch.getTime() + rawDate * 86400000);
+              dateVal = jsDate.getFullYear() + '-' + String(jsDate.getMonth()+1).padStart(2,'0') + '-' + String(jsDate.getDate()).padStart(2,'0');
+            } else {
+              dateVal = formatDateToISO(rawDate);
+            }
+            if (!dateVal || dateVal.length < 10) continue;
+
+            // Parse time column — space-separated HH:MM values
+            var checkIn = '';
+            var checkOut = '';
+            var rawTime = String(row[4] != null ? row[4] : '').trim();
+
+            if (rawTime && rawTime.indexOf(':') > -1) {
+              var timeParts = rawTime.split(/\s+/);
+              var validTimes = timeParts.filter(function(p) { return /^\d{1,2}:\d{2}$/.test(p); });
+              if (validTimes.length >= 2) {
+                checkIn = validTimes[0];
+                checkOut = validTimes[validTimes.length - 1]; // last scan = check-out
+              } else if (validTimes.length === 1) {
+                checkIn = validTimes[0];
+              }
+            } else if (rawTime) {
+              // Try decimal time format
+              var numVal = parseFloat(rawTime);
+              if (!isNaN(numVal) && numVal > 0 && numVal < 1) {
+                var totalMin = Math.round(numVal * 1440);
+                checkIn = String(Math.floor(totalMin/60)).padStart(2,'0') + ':' + String(totalMin%60).padStart(2,'0');
+              }
+            }
+
+            // Only import rows that have time data (no point importing empty days)
+            if (!checkIn && !checkOut) continue;
+
+            // Track which fingerprint IDs were found
+            var emp = APP.employees.find(function(e) {
+              return String(e.fingerprintId||'').trim() === acNo || String(e.empId||'').trim() === acNo;
+            });
+            if (emp) { matchedIds[acNo] = emp.name; }
+            else { unmatchedIds[acNo] = (unmatchedIds[acNo]||0) + 1; }
+
+            records.push({
+              fingerprintId: acNo,
+              empName: emp ? emp.name : ('ID:' + acNo),
+              date: dateVal,
+              checkIn: checkIn,
+              checkOut: checkOut
+            });
+          }
+
+          // Log matching summary
+          var matchCount = Object.keys(matchedIds).length;
+          var unmatchCount = Object.keys(unmatchedIds).length;
+          console.log('Attendance import: ' + matchCount + ' employees matched, ' + unmatchCount + ' unmatched IDs');
+          if (unmatchCount > 0) console.log('Unmatched AC-No:', Object.keys(unmatchedIds).join(', '));
+
+        } else {
+          // === OLD FORMAT with employee header blocks ===
+          var currentEmpName = '';
+          var currentEmpId = '';
+
+          for (var i = 0; i < rows.length; i++) {
+            var row = rows[i];
+            if (!row || row.length === 0) continue;
+
+            var col0 = String(row[0] != null ? row[0] : '').trim();
+            var col1 = String(row[1] != null ? row[1] : '').trim();
+            if (!col0 && !col1) continue;
+
+            // Detect employee header
+            if (col0.length > 5 && !col1) {
+              for (var j = i+1; j < Math.min(i+5, rows.length); j++) {
+                var lookRow = rows[j];
+                var lookCol0 = String(lookRow && lookRow[0] != null ? lookRow[0] : '').trim();
+                if (lookCol0.indexOf('Attendance') > -1) {
+                  var idMatch = col0.match(/(\d+)\s*$/);
+                  if (idMatch) {
+                    currentEmpId = idMatch[1];
+                    currentEmpName = col0.substring(0, col0.lastIndexOf(currentEmpId)).trim();
+                  }
+                  break;
+                }
+              }
+              continue;
+            }
+
+            if (col0.indexOf('Attendance') > -1 || col1 === 'AC-No' || col0 === 'SALT SURF' || col0 === 'No') continue;
+            if (!col1) continue;
+
+            var rawDate = row[3];
+            var dateVal = '';
+            if (typeof rawDate === 'number') {
+              var excelEpoch = new Date(1899, 11, 30);
+              var jsDate = new Date(excelEpoch.getTime() + rawDate * 86400000);
+              dateVal = jsDate.getFullYear() + '-' + String(jsDate.getMonth()+1).padStart(2,'0') + '-' + String(jsDate.getDate()).padStart(2,'0');
+            } else {
+              dateVal = formatDateToISO(rawDate);
+            }
+            if (!dateVal || dateVal.length < 10) continue;
+
+            var checkIn = '';
+            var checkOut = '';
+            for (var tc = 4; tc < row.length; tc++) {
+              var rawTime = row[tc];
+              if (rawTime == null) continue;
+              var timeStr = String(rawTime).trim();
+              if (!timeStr || timeStr === 'Time') continue;
+
+              if (timeStr.indexOf(':') > -1) {
+                var timeParts = timeStr.split(/\s+/);
+                var times = timeParts.filter(function(p) { return /^\d{1,2}:\d{2}$/.test(p); });
+                if (times.length >= 2) { checkIn = times[0]; checkOut = times[times.length-1]; }
+                else if (times.length === 1) { checkIn = times[0]; }
+                break;
+              }
+
+              var numVal = parseFloat(timeStr);
+              if (!isNaN(numVal) && numVal > 0 && numVal < 1) {
+                var totalMin = Math.round(numVal * 1440);
+                var hhmm = String(Math.floor(totalMin/60)).padStart(2,'0') + ':' + String(totalMin%60).padStart(2,'0');
+                if (!checkIn) checkIn = hhmm;
+                else if (!checkOut) { checkOut = hhmm; break; }
+              }
+            }
+
+            if (!checkIn && !checkOut) continue;
+
+            records.push({
+              fingerprintId: col1,
+              empName: currentEmpName,
+              date: dateVal,
+              checkIn: checkIn,
+              checkOut: checkOut
+            });
+          }
+        }
+
+        // Count stats
+        var withTime = records.filter(function(r) { return r.checkIn; }).length;
+        var withBoth = records.filter(function(r) { return r.checkIn && r.checkOut; }).length;
+
+        matchAttendanceToEmployees(records);
+        showToast(t('attendanceUploaded') + ': ' + records.length + ' records (' + withBoth + ' with in+out, ' + (withTime - withBoth) + ' partial)', 'success');
+        addLog('attendance_upload', 'Attendance file uploaded: ' + filename + ' (' + records.length + ' records, ' + withBoth + ' complete)');
+        renderAttendance();
+      } catch(err) {
+        showToast(t('errorParsingFile') + ': ' + err.message, 'error');
+        console.error('Attendance parse error:', err);
+      }
+    }
+
+    function getApprovedOT(empId, dateStr) {
+      // Check if employee has an approved OT request for the given date
+      return APP.ots.find(function(ot) {
+        return ot.empId === empId && ot.date === dateStr && ot.status === 'approved';
+      }) || null;
+    }
+
+    function getShiftEndTime(shift) {
+      if (shift === 'A') return '16:00';
+      if (shift === 'B') return '19:00';
+      if (shift === 'C') return '21:00';
+      return '';
+    }
+
+    function calcAttendanceStatus(checkIn, checkOut, shift, shiftStart, empId, dateStr) {
+      var status = 'nodata';
+      var lateMinutes = 0;
+      var hasOT = !!getApprovedOT(empId, dateStr);
+
+      if (shift === 'OFF') {
+        if (hasOT && checkIn) {
+          status = 'ot';  // Day off but approved OT and showed up
+        } else if (checkIn && !hasOT) {
+          status = 'dayoff+scan';  // Day off but scanned in without approved OT — flag for HR
+        } else {
+          status = 'dayoff';
+        }
+      } else if (!shift) {
+        status = checkIn ? 'ontime' : 'nodata';
+      } else if (checkIn) {
+        // Calculate late
+        var ciParts = checkIn.split(':');
+        var ssParts = shiftStart.split(':');
+        var ciMin = parseInt(ciParts[0]) * 60 + parseInt(ciParts[1]);
+        var ssMin = parseInt(ssParts[0]) * 60 + parseInt(ssParts[1]);
+        lateMinutes = ciMin - ssMin;
+        var isLate = lateMinutes > 0;
+        if (lateMinutes < 0) lateMinutes = 0;
+
+        if (hasOT) {
+          status = isLate ? 'late+ot' : 'ontime+ot';
+        } else {
+          status = isLate ? 'late' : 'ontime';
+        }
+      }
+      return { status: status, lateMinutes: lateMinutes };
+    }
+
+    function matchAttendanceToEmployees(records) {
+      records.forEach(function(rec) {
+        // Match fingerprint ID (compare as strings to handle number/string mismatch)
+        var fpId = String(rec.fingerprintId).trim();
+        var emp = APP.employees.find(function(e) {
+          return String(e.fingerprintId || '').trim() === fpId || String(e.empId || '').trim() === fpId;
+        });
+
+        var empId = emp ? emp.id : 'unknown_' + rec.fingerprintId;
+
+        // Determine shift from schedule or default
+        var shiftInfo = getEmployeeShift(empId, rec.date);
+        var shift = shiftInfo.shift;
+        var shiftSource = shiftInfo.source;
+        var shiftStart = '';
+        if (shift === 'A') shiftStart = '07:00';
+        else if (shift === 'B') shiftStart = '10:00';
+        else if (shift === 'C') shiftStart = '12:00';
+
+        var result = calcAttendanceStatus(rec.checkIn, rec.checkOut, shift, shiftStart, empId, rec.date);
+
+        // Check if record already exists for this employee+date
+        var existing = APP.attendance.findIndex(function(a) { return a.empId === empId && a.date === rec.date; });
+        var attRecord = {
+          empId: empId,
+          empName: emp ? emp.name : rec.empName,
+          fingerprintId: rec.fingerprintId,
+          date: rec.date,
+          checkIn: rec.checkIn,
+          checkOut: rec.checkOut,
+          shift: shift || '-',
+          shiftStart: shiftStart || '-',
+          shiftSource: shiftSource,
+          status: result.status,
+          lateMinutes: result.lateMinutes
+        };
+
+        if (existing >= 0) {
+          APP.attendance[existing] = attRecord;
+        } else {
+          APP.attendance.push(attRecord);
+        }
+      });
+    }
+
+    function getEmployeeShift(empId, dateStr) {
+      // Look up from APP.schedules
+      var sched = APP.schedules.find(function(s) { return s.empId === empId && s.date === dateStr; });
+      if (sched) return { shift: sched.shift, source: 'schedule' };
+      // Default: try to figure out from day of week (weekday = A, weekend = OFF)
+      var d = new Date(dateStr);
+      var day = d.getDay();
+      var defaultShift = (day === 0) ? 'OFF' : 'A'; // Sunday off, default shift A
+      return { shift: defaultShift, source: 'default' };
+    }
+
+    function recalcAttendanceForEmployee(empId, dateStr) {
+      // Recalculate status for an attendance record when schedule or OT changes
+      var att = APP.attendance.find(function(a) { return a.empId === empId && a.date === dateStr; });
+      if (!att) return;
+      var shiftInfo = getEmployeeShift(empId, dateStr);
+      var shift = shiftInfo.shift;
+      var shiftStart = '';
+      if (shift === 'A') shiftStart = '07:00';
+      else if (shift === 'B') shiftStart = '10:00';
+      else if (shift === 'C') shiftStart = '12:00';
+
+      att.shift = shift;
+      att.shiftStart = shiftStart || '-';
+      att.shiftSource = shiftInfo.source;
+
+      var result = calcAttendanceStatus(att.checkIn, att.checkOut, shift, shiftStart, empId, dateStr);
+      att.status = result.status;
+      att.lateMinutes = result.lateMinutes;
+    }
+
+    function recalcAllAttendance() {
+      APP.attendance.forEach(function(a) {
+        recalcAttendanceForEmployee(a.empId, a.date);
+      });
+    }
+
+    function getDefaultDateRange() {
+      var now = new Date();
+      var y = now.getFullYear();
+      var m = now.getMonth();
+      var from = new Date(y, m, 1).toISOString().split('T')[0];
+      var to = new Date(y, m + 1, 0).toISOString().split('T')[0];
+      return { from: from, to: to };
+    }
+
+    function filterByDateRange(items, dateField, from, to) {
+      return items.filter(function(item) {
+        var d = item[dateField];
+        if (!d) return false;
+        var dateStr = d.length > 10 ? d.split('T')[0] : d;
+        return dateStr >= from && dateStr <= to;
+      });
+    }
+
+    function renderReports() {
+      var content = document.getElementById('content');
+      var range = getDefaultDateRange();
+
+      content.innerHTML = '<div class="card">' +
+        '<h3>\u{1F4CA} ' + t('reports') + '</h3>' +
+        '<div style="display:flex; gap:15px; align-items:flex-end; flex-wrap:wrap; margin-bottom:20px; padding:15px; background:#f9f9f9; border-radius:8px;">' +
+          '<div class="form-group" style="margin-bottom:0;">' +
+            '<label style="font-size:13px; margin-bottom:4px;">' + t('from') + '</label>' +
+            '<input type="date" id="reportFrom" value="' + range.from + '" style="padding:10px; font-size:14px;">' +
+          '</div>' +
+          '<div class="form-group" style="margin-bottom:0;">' +
+            '<label style="font-size:13px; margin-bottom:4px;">' + t('to') + '</label>' +
+            '<input type="date" id="reportTo" value="' + range.to + '" style="padding:10px; font-size:14px;">' +
+          '</div>' +
+          '<button class="btn btn-primary" onclick="updateReportSummary()" style="height:42px;">' + t('submit') + '</button>' +
+        '</div>' +
+        '<div id="reportSummary"></div>' +
+        '<div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:20px;">' +
+          '<button class="btn btn-secondary" onclick="downloadLeaveReport()">\u{1F4DD} ' + t('leaveReportCSV') + '</button>' +
+          '<button class="btn btn-secondary" onclick="downloadOTReport()">\u{23F0} ' + t('otReportCSV') + '</button>' +
+          '<button class="btn btn-secondary" onclick="downloadAttendanceReport(\'all\')">\u{1F4CB} ' + t('attendanceReportCSV') + '</button>' +
+          '<button class="btn btn-secondary" onclick="downloadLateSummaryReport()">\u{1F6A8} ' + t('lateSummary') + '</button>' +
+          '<button class="btn btn-secondary" onclick="downloadWeeklyScheduleCSV(\'all\')">\u{1F4C5} ' + t('weeklyScheduleCSV') + '</button>' +
+          '<button class="btn btn-secondary" onclick="downloadActivityLog()">\u{1F4DC} ' + t('activityLogCSV') + '</button>' +
+        '</div>' +
+      '</div>';
+
+      updateReportSummary();
+    }
+
+    function getReportDates() {
+      var from = document.getElementById('reportFrom').value;
+      var to = document.getElementById('reportTo').value;
+      if (!from || !to) {
+        var range = getDefaultDateRange();
+        from = from || range.from;
+        to = to || range.to;
+      }
+      return { from: from, to: to };
+    }
+
+    function updateReportSummary() {
+      var dates = getReportDates();
+      var from = dates.from;
+      var to = dates.to;
+      var summary = document.getElementById('reportSummary');
+
+      // Filter data by date range
+      var filteredLeaves = filterByDateRange(APP.leaves, 'from', from, to);
+      var filteredOTs = filterByDateRange(APP.ots, 'date', from, to);
+      var filteredLogs = filterByDateRange(APP.logs, 'ts', from, to);
+
+      // Leave summary by type
+      var sickCount = filteredLeaves.filter(function(l) { return l.type === 'sickLeave'; }).length;
+      var personalCount = filteredLeaves.filter(function(l) { return l.type === 'personalLeave'; }).length;
+      var annualCount = filteredLeaves.filter(function(l) { return l.type === 'annualLeave'; }).length;
+      var approvedCount = filteredLeaves.filter(function(l) { return l.status === 'approved'; }).length;
+      var pendingCount = filteredLeaves.filter(function(l) { return l.status === 'pending'; }).length;
+      var rejectedCount = filteredLeaves.filter(function(l) { return l.status === 'rejected'; }).length;
+
+      // OT summary
+      var otApproved = filteredOTs.filter(function(o) { return o.status === 'approved'; }).length;
+      var otPending = filteredOTs.filter(function(o) { return o.status === 'pending'; }).length;
+
+      var html = '<p style="font-size:13px; color:#666; margin-bottom:15px;">' + from + ' \u2192 ' + to + '</p>';
+
+      // Stats cards
+      html += '<div class="stats-grid" style="margin-bottom:15px;">';
+      html += '<div class="stat-card"><div class="stat-number">' + filteredLeaves.length + '</div><div class="stat-label">' + t('leaveRequest') + '</div></div>';
+      html += '<div class="stat-card"><div class="stat-number">' + filteredOTs.length + '</div><div class="stat-label">' + t('otRequest') + '</div></div>';
+      var filteredAtt = filterByDateRange(APP.attendance, 'date', from, to);
+      var lateCount = filteredAtt.filter(function(a) { return a.status === 'late'; }).length;
+      html += '<div class="stat-card"><div class="stat-number">' + filteredAtt.length + '</div><div class="stat-label">' + t('attendance') + '</div></div>';
+      html += '<div class="stat-card" style="border-top-color:#E74C3C;"><div class="stat-number" style="color:#E74C3C;">' + lateCount + '</div><div class="stat-label">' + t('late') + '</div></div>';
+      html += '<div class="stat-card"><div class="stat-number">' + filteredLogs.length + '</div><div class="stat-label">' + t('activityLog') + '</div></div>';
+      html += '</div>';
+
+      // Leave breakdown table
+      html += '<div style="display:flex; gap:20px; flex-wrap:wrap;">';
+      html += '<div style="flex:1; min-width:250px;">';
+      html += '<h4 style="color:#1A365D; margin-bottom:8px;">' + t('leaveRequest') + '</h4>';
+      html += '<table><tr><th>' + t('type') + '</th><th>#</th></tr>';
+      html += '<tr><td>' + t('sickLeave') + '</td><td>' + sickCount + '</td></tr>';
+      html += '<tr><td>' + t('personalLeave') + '</td><td>' + personalCount + '</td></tr>';
+      html += '<tr><td>' + t('annualLeave') + '</td><td>' + annualCount + '</td></tr>';
+      html += '<tr style="font-weight:700;"><td>' + t('total') + '</td><td>' + filteredLeaves.length + '</td></tr>';
+      html += '</table>';
+      html += '</div>';
+
+      // Status breakdown
+      html += '<div style="flex:1; min-width:250px;">';
+      html += '<h4 style="color:#1A365D; margin-bottom:8px;">' + t('status') + '</h4>';
+      html += '<table><tr><th>' + t('status') + '</th><th>' + t('leaveRequest') + '</th><th>' + t('otRequest') + '</th></tr>';
+      html += '<tr><td><span class="badge badge-approved">' + t('approved') + '</span></td><td>' + approvedCount + '</td><td>' + otApproved + '</td></tr>';
+      html += '<tr><td><span class="badge badge-pending">' + t('pending') + '</span></td><td>' + pendingCount + '</td><td>' + otPending + '</td></tr>';
+      html += '<tr><td><span class="badge badge-rejected">' + t('rejected') + '</span></td><td>' + rejectedCount + '</td><td>' + filteredOTs.filter(function(o){return o.status==='rejected';}).length + '</td></tr>';
+      html += '</table>';
+      html += '</div>';
+
+      // Per-employee leave summary
+      html += '<div style="flex:1; min-width:300px;">';
+      html += '<h4 style="color:#1A365D; margin-bottom:8px;">' + t('employee') + '</h4>';
+      html += '<table><tr><th>' + t('employee') + '</th><th>' + t('sickLeave') + '</th><th>' + t('personalLeave') + '</th><th>' + t('annualLeave') + '</th><th>Total</th></tr>';
+      APP.employees.forEach(function(emp) {
+        var empLeaves = filteredLeaves.filter(function(l) { return l.empId === emp.id; });
+        if (empLeaves.length === 0) return;
+        var s = empLeaves.filter(function(l){return l.type==='sickLeave';}).length;
+        var p = empLeaves.filter(function(l){return l.type==='personalLeave';}).length;
+        var a = empLeaves.filter(function(l){return l.type==='annualLeave';}).length;
+        html += '<tr><td>' + emp.name + '</td><td>' + s + '</td><td>' + p + '</td><td>' + a + '</td><td><strong>' + empLeaves.length + '</strong></td></tr>';
+      });
+      html += '</table>';
+      html += '</div>';
+      html += '</div>';
+
+      summary.innerHTML = html;
+    }
+
+    function downloadLeaveReport() {
+      var dates = getReportDates();
+      var filtered = filterByDateRange(APP.leaves, 'from', dates.from, dates.to);
+      if (filtered.length === 0) {
+        showToast(t('noLeaveData'), 'error');
+        return;
+      }
+      var data = filtered.map(function(l) {
+        return {
+          'Employee ID': (APP.employees.find(function(e){return e.id===l.empId;}) || {}).empId || l.empId,
+          'Employee': (APP.employees.find(function(e){return e.id===l.empId;}) || {}).name || t('unknown'),
+          'Type': l.type,
+          'Mode': l.mode === 'hourly' ? 'Hourly' : 'Full Day',
+          'Start Date': l.from,
+          'End Date': l.to || l.from,
+          'Start Time': l.startTime || '',
+          'End Time': l.endTime || '',
+          'Duration': l.durationText || '',
+          'Status': l.status,
+          'Reason': l.reason,
+          'Photos': l.photos ? l.photos.length : 0
+        };
+      });
+      downloadCSV('leave_report_' + dates.from + '_to_' + dates.to + '.csv', data);
+      addLog('report_download', 'Leave report downloaded (' + dates.from + ' to ' + dates.to + ')');
+    }
+
+    function downloadOTReport() {
+      var dates = getReportDates();
+      var filtered = filterByDateRange(APP.ots, 'date', dates.from, dates.to);
+      if (filtered.length === 0) {
+        showToast(t('noOTData'), 'error');
+        return;
+      }
+      var data = filtered.map(function(ot) {
+        return {
+          'Employee ID': (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).empId || ot.empId,
+          'Employee': (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).name || t('unknown'),
+          'Date': ot.date,
+          'Start': ot.startTime,
+          'End': ot.endTime,
+          'Status': ot.status,
+          'Reason': ot.reason
+        };
+      });
+      downloadCSV('ot_report_' + dates.from + '_to_' + dates.to + '.csv', data);
+      addLog('report_download', 'OT report downloaded (' + dates.from + ' to ' + dates.to + ')');
+    }
+
+    function downloadAttendanceReport(mode) {
+      var from = document.getElementById('attFrom') ? document.getElementById('attFrom').value : document.getElementById('reportFrom') ? document.getElementById('reportFrom').value : '';
+      var to = document.getElementById('attTo') ? document.getElementById('attTo').value : document.getElementById('reportTo') ? document.getElementById('reportTo').value : '';
+      if (!from || !to) { var r = getDefaultDateRange(); from = from || r.from; to = to || r.to; }
+      var empFilter = document.getElementById('attEmpFilter') ? document.getElementById('attEmpFilter').value : 'all';
+
+      var filtered = APP.attendance.filter(function(a) {
+        if (a.date < from || a.date > to) return false;
+        if (mode === 'individual' && empFilter === 'all') {
+          showToast(t('selectEmployeeFirst'), 'error');
+          return false;
+        }
+        if (mode === 'individual' && a.empId !== empFilter) return false;
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        showToast(t('noAttendanceData'), 'error');
+        return;
+      }
+
+      var data = filtered.map(function(a) {
+        var emp = APP.employees.find(function(e) { return e.id === a.empId; });
+        return {
+          'Employee ID': emp ? (emp.empId || '') : a.fingerprintId || '',
+          'Fingerprint ID': a.fingerprintId || '',
+          'Employee': a.empName || (emp ? emp.name : ''),
+          'Date': a.date,
+          'Shift': a.shift || '',
+          'Shift Start': a.shiftStart || '',
+          'Check-in': a.checkIn || '',
+          'Check-out': a.checkOut || '',
+          'Status': a.status,
+          'Late (min)': a.lateMinutes || 0
+        };
+      });
+      var prefix = mode === 'individual' ? 'attendance_individual_' : 'attendance_all_';
+      downloadCSV(prefix + from + '_to_' + to + '.csv', data);
+      addLog('report_download', 'Attendance report (' + mode + ') downloaded (' + from + ' to ' + to + ')');
+    }
+
+    function downloadLateSummaryReport() {
+      var from = document.getElementById('attFrom') ? document.getElementById('attFrom').value : '';
+      var to = document.getElementById('attTo') ? document.getElementById('attTo').value : '';
+      if (!from || !to) { var r = getDefaultDateRange(); from = from || r.from; to = to || r.to; }
+
+      var lateRecords = APP.attendance.filter(function(a) { return a.status === 'late' && a.date >= from && a.date <= to; });
+      // Group by employee
+      var empMap = {};
+      lateRecords.forEach(function(a) {
+        if (!empMap[a.empId]) empMap[a.empId] = { count: 0, totalMin: 0, dates: [] };
+        empMap[a.empId].count++;
+        empMap[a.empId].totalMin += (a.lateMinutes || 0);
+        empMap[a.empId].dates.push(a.date);
+      });
+
+      var data = [];
+      Object.keys(empMap).forEach(function(eid) {
+        var emp = APP.employees.find(function(e) { return e.id === eid; });
+        data.push({
+          'Employee ID': emp ? (emp.empId || '') : '',
+          'Employee': emp ? emp.name : eid,
+          'Department': emp ? emp.dept : '',
+          'Times Late': empMap[eid].count,
+          'Total Late Minutes': empMap[eid].totalMin,
+          'Average Late (min)': Math.round(empMap[eid].totalMin / empMap[eid].count),
+          'Dates Late': empMap[eid].dates.join('; ')
+        });
+      });
+      data.sort(function(a, b) { return b['Times Late'] - a['Times Late']; });
+      downloadCSV('late_summary_' + from + '_to_' + to + '.csv', data);
+      addLog('report_download', 'Late summary report downloaded (' + from + ' to ' + to + ')');
+    }
+
+    function downloadActivityLog() {
+      var dates = getReportDates();
+      var filtered = filterByDateRange(APP.logs, 'ts', dates.from, dates.to);
+      if (filtered.length === 0) {
+        showToast('No activity data in selected range', 'error');
+        return;
+      }
+      var data = filtered.map(function(log) {
+        return {
+          'Timestamp': log.ts,
+          'User': log.user,
+          'Action': log.action,
+          'Detail': log.detail
+        };
+      });
+      downloadCSV('activity_log_' + dates.from + '_to_' + dates.to + '.csv', data);
+    }
+
+    function downloadCSV(filename, data) {
+      const headers = Object.keys(data[0]);
+      const csv = [headers.join(','), ...data.map(row => headers.map(h => '"' + (row[h] || '') + '"').join(','))].join('\n');
+      const a = document.createElement('a');
+      a.href = 'data:text/csv,' + encodeURIComponent(csv);
+      a.download = filename;
+      a.click();
+    }
+
+    function renderActivityLog() {
+      const content = document.getElementById('content');
+      var oldestLog = APP.logs.length > 0 ? new Date(APP.logs[0].ts).toLocaleDateString() : '-';
+      var newestLog = APP.logs.length > 0 ? new Date(APP.logs[APP.logs.length - 1].ts).toLocaleDateString() : '-';
+      let html = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+          <button class="btn btn-secondary btn-small" onclick="downloadActivityLog()">Download CSV</button>
+          <span style="font-size:12px; color:#7F8C8D;">${t('retentionPolicy')} &bull; ${APP.logs.length} ${t('records')} (${oldestLog} — ${newestLog})</span>
+        </div>
+        <div class="card">
+          <h3>${t('activityLog')}</h3>
+          <table>
+            <tr><th>${t('timestamp')}</th><th>${t('user')}</th><th>${t('action')}</th><th>${t('detail')}</th></tr>`;
+
+      APP.logs.slice().reverse().forEach(log => {
+        const ts = new Date(log.ts).toLocaleString();
+        html += `<tr><td>${ts}</td><td>${log.user}</td><td>${log.action}</td><td>${log.detail}</td></tr>`;
+      });
+
+      html += `</table></div>`;
+      if (APP.logs.length === 0) {
+        html = `<div class="card"><p>${t('noData')}</p></div>`;
+      }
+      content.innerHTML = html;
+    }
+
+    function openMyProfileModal() {
+      var u = APP.currentUser;
+      var natOptions = ['Thai','Myanmar','Cambodian','Laos','Other'].map(function(n) {
+        return '<option value="' + n + '"' + (u.nationality === n ? ' selected' : '') + '>' + n + '</option>';
+      }).join('');
+      var html = '';
+      html += '<div style="background:#F0F4F8; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px; color:#1A365D;"><strong>ID:</strong> ' + (u.empId || '-') + ' | <strong>' + t('department') + ':</strong> ' + u.dept + ' | <strong>' + t('role') + ':</strong> ' + u.role + '</div>';
+      html += '<div class="form-group" style="text-align:center;">';
+      html += '<label>' + t('profilePicture') + '</label>';
+      html += '<div style="margin:10px auto;">';
+      if (u.photo) {
+        html += '<img id="myPhotoPreview" src="' + u.photo + '" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #FF6C37;">';
+      } else {
+        html += '<div id="myPhotoPreview" style="width:100px; height:100px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:36px; font-weight:700;">' + u.name.charAt(0).toUpperCase() + '</div>';
+      }
+      html += '</div>';
+      html += '<input type="file" id="myPhotoFile" accept="image/*" onchange="previewProfilePhoto(this)" style="display:none;">';
+      html += '<button class="btn btn-secondary btn-small" onclick="document.getElementById(\'myPhotoFile\').click()">' + t('uploadPhoto') + '</button>';
+      if (u.photo) html += ' <button class="btn btn-danger btn-small" onclick="removeMyProfilePhoto()">' + t('removePhoto') + '</button>';
+      html += '</div>';
+      html += '<div class="form-group"><label>' + t('contactName') + '</label><input type="text" id="myName" value="' + (u.name || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactPhone') + '</label><input type="text" id="myPhone" value="' + (u.phone || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactEmail') + '</label><input type="email" id="myEmail" value="' + (u.email || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('lineId') + '</label><input type="text" id="myLineId" value="' + (u.lineId || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('birthday') + '</label><input type="date" id="myBirthday" value="' + (u.birthday || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('nationality') + '</label><select id="myNationality">' + natOptions + '</select></div>';
+      html += '<div class="form-group"><label>' + t('address') + '</label><textarea id="myAddress" rows="2">' + (u.address || '') + '</textarea></div>';
+      html += '<hr style="margin:15px 0; border:none; border-top:1px solid #eee;">';
+      html += '<div class="form-group"><label>' + t('username') + '</label><input type="text" id="myUsername" value="' + (u.username || '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('passwordField') + '</label><input type="password" id="myPassword" value="' + (u.password || '') + '"></div>';
+      html += '<div class="modal-footer">';
+      html += '<button class="btn btn-secondary" onclick="closeModal()">' + t('cancel') + '</button>';
+      html += '<button class="btn btn-primary" onclick="saveMyProfile()">' + t('submit') + '</button>';
+      html += '</div>';
+      openModal(t('editProfile'), html);
+    }
+
+    var profilePhotoTemp = null;
+
+    function previewProfilePhoto(input) {
+      if (!input.files || input.files.length === 0) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        profilePhotoTemp = e.target.result;
+        var preview = document.getElementById('myPhotoPreview');
+        if (preview.tagName === 'IMG') {
+          preview.src = profilePhotoTemp;
+        } else {
+          preview.outerHTML = '<img id="myPhotoPreview" src="' + profilePhotoTemp + '" style="width:100px; height:100px; border-radius:50%; object-fit:cover; border:3px solid #FF6C37;">';
+        }
+      };
+      reader.readAsDataURL(input.files[0]);
+    }
+
+    function removeMyProfilePhoto() {
+      profilePhotoTemp = 'REMOVE';
+      var preview = document.getElementById('myPhotoPreview');
+      var initial = APP.currentUser.name.charAt(0).toUpperCase();
+      preview.outerHTML = '<div id="myPhotoPreview" style="width:100px; height:100px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:36px; font-weight:700;">' + initial + '</div>';
+    }
+
+    function saveMyProfile() {
+      var u = APP.currentUser;
+      var emp = APP.employees.find(function(e) { return e.id === u.id; });
+      if (!emp) return;
+      var name = document.getElementById('myName').value.trim();
+      var username = document.getElementById('myUsername').value.trim();
+      if (!name || !username) { showToast(t('nameUsernameRequired'), 'error'); return; }
+      emp.name = name;
+      emp.phone = document.getElementById('myPhone').value.trim();
+      emp.email = document.getElementById('myEmail').value.trim();
+      emp.lineId = document.getElementById('myLineId').value.trim();
+      emp.birthday = document.getElementById('myBirthday').value;
+      emp.nationality = document.getElementById('myNationality').value;
+      emp.address = document.getElementById('myAddress').value.trim();
+      emp.username = username;
+      emp.password = document.getElementById('myPassword').value;
+      if (profilePhotoTemp === 'REMOVE') { emp.photo = null; }
+      else if (profilePhotoTemp) { emp.photo = profilePhotoTemp; }
+      profilePhotoTemp = null;
+      APP.currentUser = emp;
+      document.querySelector('.user-name').textContent = emp.name;
+      updateSidebarAvatar(emp);
+      addLog('profile_update', 'Profile updated by ' + emp.name);
+      showToast(t('profileUpdated'), 'success');
+      closeModal();
+      renderDashboard();
+    }
+
+    function renderContacts() {
+      var content = document.getElementById('content');
+      var isManager = APP.currentUser.role === 'hr' || APP.currentUser.role === 'md' || APP.currentUser.role === 'admin';
+      var html = '';
+
+      // Employee Directory
+      html += '<div class="card"><h3>\u{1F4DE} ' + t('employeeDirectory') + '</h3>';
+      html += '<div style="margin-bottom:12px;"><input type="text" id="contactSearch" placeholder="' + t('searchContacts') + '" style="padding:8px; width:100%; max-width:400px;" oninput="filterContactsTable()"></div>';
+      html += '<div id="contactsTableArea" style="overflow-x:auto;"></div></div>';
+
+      // Back Office Team
+      html += '<div class="card"><div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">';
+      html += '<h3 style="margin-bottom:0;">\u{1F3E2} ' + t('backOfficeTeam') + '</h3>';
+      if (isManager) {
+        html += '<button class="btn btn-primary btn-small" onclick="openBackOfficeContactModal()">' + t('addBackOfficeContact') + '</button>';
+      }
+      html += '</div>';
+      if (APP.backOfficeContacts.length === 0) {
+        html += '<p style="color:#999; font-style:italic;">' + t('noData') + '</p>';
+      } else {
+        html += '<div style="overflow-x:auto;"><table>';
+        html += '<tr><th>' + t('contactName') + '</th><th>' + t('contactRole') + '</th><th>' + t('contactLineId') + '</th><th>' + t('contactPhone') + '</th><th>' + t('contactEmail') + '</th><th>' + t('contactNotes') + '</th>';
+        if (isManager) html += '<th>' + t('action') + '</th>';
+        html += '</tr>';
+        APP.backOfficeContacts.forEach(function(c) {
+          html += '<tr>';
+          html += '<td><strong>' + c.name + '</strong></td>';
+          html += '<td>' + (c.role || '-') + '</td>';
+          html += '<td>' + (c.lineId || '-') + '</td>';
+          html += '<td>' + (c.phone || '-') + '</td>';
+          html += '<td>' + (c.email || '-') + '</td>';
+          html += '<td>' + (c.notes || '-') + '</td>';
+          if (isManager) {
+            html += '<td><button class="btn btn-secondary btn-small" onclick="editBackOfficeContact(\'' + c.id + '\')">' + t('edit') + '</button> <button class="btn btn-danger btn-small" onclick="deleteBackOfficeContact(\'' + c.id + '\')">' + t('delete') + '</button></td>';
+          }
+          html += '</tr>';
+        });
+        html += '</table></div>';
+      }
+      html += '</div>';
+
+      content.innerHTML = html;
+      filterContactsTable();
+    }
+
+    function filterContactsTable() {
+      var search = (document.getElementById('contactSearch').value || '').trim().toLowerCase();
+      var filtered = APP.employees.filter(function(emp) {
+        if (!search) return true;
+        var haystack = [emp.empId, emp.fingerprintId, emp.name, emp.nickname, emp.dept, emp.pos, emp.phone, emp.lineId].join(' ').toLowerCase();
+        return haystack.indexOf(search) > -1;
+      });
+      var html = '<table>';
+      html += '<tr><th></th><th>' + t('employeeId') + '</th><th>' + t('contactName') + '</th><th>' + t('nickname') + '</th><th>' + t('section') + '</th><th>' + t('position') + '</th><th>' + t('contactLineId') + '</th><th>' + t('contactPhone') + '</th><th>' + t('contactEmail') + '</th></tr>';
+      filtered.forEach(function(emp) {
+        var avatar = emp.photo ? '<img src="' + emp.photo + '" style="width:35px; height:35px; border-radius:50%; object-fit:cover;">' : '<div style="width:35px; height:35px; border-radius:50%; background:#003764; color:white; display:inline-flex; align-items:center; justify-content:center; font-size:14px; font-weight:700;">' + emp.name.charAt(0).toUpperCase() + '</div>';
+        html += '<tr>';
+        html += '<td>' + avatar + '</td>';
+        html += '<td>' + (emp.empId || '-') + '</td>';
+        html += '<td><strong>' + emp.name + '</strong></td>';
+        html += '<td>' + (emp.nickname || '-') + '</td>';
+        html += '<td>' + (emp.section || emp.dept || '-') + '</td>';
+        html += '<td>' + (emp.pos || '-') + '</td>';
+        html += '<td>' + (emp.lineId || '-') + '</td>';
+        html += '<td>' + (emp.phone || '-') + '</td>';
+        html += '<td>' + (emp.email || '-') + '</td>';
+        html += '</tr>';
+      });
+      html += '</table>';
+      html += '<div style="margin-top:8px; color:#666; font-size:13px;">' + filtered.length + ' / ' + APP.employees.length + '</div>';
+      document.getElementById('contactsTableArea').innerHTML = html;
+    }
+
+    function openBackOfficeContactModal(editId) {
+      var c = editId ? APP.backOfficeContacts.find(function(x) { return x.id === editId; }) : null;
+      var html = '<div class="form-group"><label>' + t('contactName') + ' *</label><input type="text" id="boName" value="' + (c ? c.name : '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactRole') + '</label><input type="text" id="boRole" value="' + (c ? (c.role || '') : '') + '" placeholder="e.g. Accountant, Lawyer"></div>';
+      html += '<div class="form-group"><label>' + t('contactLineId') + '</label><input type="text" id="boLineId" value="' + (c ? (c.lineId || '') : '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactPhone') + '</label><input type="text" id="boPhone" value="' + (c ? (c.phone || '') : '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactEmail') + '</label><input type="email" id="boEmail" value="' + (c ? (c.email || '') : '') + '"></div>';
+      html += '<div class="form-group"><label>' + t('contactNotes') + '</label><textarea id="boNotes" rows="2">' + (c ? (c.notes || '') : '') + '</textarea></div>';
+      html += '<div class="modal-footer">';
+      html += '<button class="btn btn-secondary" onclick="closeModal()">' + t('cancel') + '</button>';
+      html += '<button class="btn btn-primary" onclick="saveBackOfficeContact(\'' + (editId || '') + '\')">' + t('submit') + '</button>';
+      html += '</div>';
+      openModal(editId ? t('edit') + ' - ' + t('backOfficeTeam') : t('addBackOfficeContact'), html);
+    }
+
+    function saveBackOfficeContact(editId) {
+      var name = document.getElementById('boName').value.trim();
+      if (!name) { showToast('Please enter a name', 'error'); return; }
+      var data = {
+        name: name,
+        role: document.getElementById('boRole').value.trim(),
+        lineId: document.getElementById('boLineId').value.trim(),
+        phone: document.getElementById('boPhone').value.trim(),
+        email: document.getElementById('boEmail').value.trim(),
+        notes: document.getElementById('boNotes').value.trim()
+      };
+      if (editId) {
+        var existing = APP.backOfficeContacts.find(function(x) { return x.id === editId; });
+        if (existing) {
+          existing.name = data.name;
+          existing.role = data.role;
+          existing.lineId = data.lineId;
+          existing.phone = data.phone;
+          existing.email = data.email;
+          existing.notes = data.notes;
+        }
+        addLog('contact_update', 'Back office contact updated: ' + name);
+      } else {
+        data.id = 'BO' + Date.now();
+        APP.backOfficeContacts.push(data);
+        addLog('contact_add', 'Back office contact added: ' + name);
+      }
+      showToast(editId ? 'Contact updated' : 'Contact added', 'success');
+      closeModal();
+      renderContacts();
+    }
+
+    function editBackOfficeContact(id) {
+      openBackOfficeContactModal(id);
+    }
+
+    function deleteBackOfficeContact(id) {
+      if (!confirm(t('confirmDelete'))) return;
+      var idx = APP.backOfficeContacts.findIndex(function(x) { return x.id === id; });
+      if (idx >= 0) {
+        var name = APP.backOfficeContacts[idx].name;
+        APP.backOfficeContacts.splice(idx, 1);
+        addLog('contact_delete', 'Back office contact deleted: ' + name);
+        showToast('Contact deleted', 'success');
+        renderContacts();
+      }
+    }
+
+    function addLog(action, detail) {
+      APP.logs.push({ ts: new Date().toISOString(), user: APP.currentUser?.name || 'System', action, detail });
+      // Enforce 30-day minimum retention — auto-purge logs older than 30 days
+      var cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 30);
+      var cutoffISO = cutoff.toISOString();
+      APP.logs = APP.logs.filter(function(log) { return log.ts >= cutoffISO; });
+    }
+
+    function openModal(title, html) {
+      const modal = document.getElementById('modal');
+      modal.innerHTML = `<div class="modal-header"><h3>${title}</h3><button class="modal-close" onclick="closeModal()">\u2715</button></div><div class="modal-body">${html}</div>`;
+      document.getElementById('modalOverlay').style.display = 'block';
+      modal.style.display = 'block';
+    }
+
+    function closeModal() {
+      document.getElementById('modalOverlay').style.display = 'none';
+      var modal = document.getElementById('modal');
+      modal.style.display = 'none';
+      modal.innerHTML = '';
+    }
+
+    function showToast(msg, type) {
+      const container = document.getElementById('toastContainer');
+      const icon = type === 'success' ? '\u2705' : '\u26A0\uFE0F';
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.innerHTML = `<span>${icon}</span> <span>${msg}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
+    var currentPage = 'dashboard';
+
+    function renderLoginPage() {
+      var el;
+      el = document.getElementById('loginSubtitle'); if (el) el.textContent = t('loginTitle');
+      el = document.getElementById('labelUsername'); if (el) el.textContent = t('loginUsername');
+      el = document.getElementById('labelPassword'); if (el) el.textContent = t('loginPassword');
+      el = document.getElementById('loginBtn'); if (el) el.textContent = t('loginBtn');
+      el = document.getElementById('noAccountText'); if (el) el.textContent = t('noAccount');
+      el = document.getElementById('signupLinkText'); if (el) el.textContent = t('signupLink');
+      el = document.getElementById('demoTitle'); if (el) el.textContent = t('demoTitle');
+      el = document.getElementById('demoMD'); if (el) el.textContent = t('demoMD');
+      el = document.getElementById('demoHR'); if (el) el.textContent = t('demoHR');
+      el = document.getElementById('demoDeptHead'); if (el) el.textContent = t('demoDeptHead');
+      el = document.getElementById('demoEmployee'); if (el) el.textContent = t('demoEmployee');
+      el = document.getElementById('demoAdmin'); if (el) el.textContent = t('demoAdmin');
+    }
+
+    function setLanguage(lang, btn) {
+      APP.lang = lang;
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      renderLoginPage();
+      renderSignupPage();
+      if (APP.currentUser) {
+        var savedPage = currentPage || 'dashboard';
+        document.querySelector('.user-name').textContent = APP.currentUser.name;
+        document.querySelector('.user-role').textContent = (APP.currentUser.empId || '') + ' | ' + APP.currentUser.role;
+        renderNavigation();
+        navigateTo(savedPage);
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', function() {
+      initApp();
+    });
+  </script>
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(reg) {
+          console.log('[PWA] Service Worker registered, scope:', reg.scope);
+        }).catch(function(err) {
+          console.log('[PWA] Service Worker registration failed:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>
