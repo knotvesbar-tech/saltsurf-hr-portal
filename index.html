@@ -1194,7 +1194,7 @@
         : 'schedule_' + empFilter + '_week_' + formatDate(weekStart) + '.csv';
 
       var a = document.createElement('a');
-      a.href = 'data:text/csv,' + encodeURIComponent(csv);
+      a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'}));
       a.download = filename;
       a.click();
 
@@ -2522,7 +2522,7 @@
       const headers = Object.keys(data[0]);
       const csv = [headers.join(','), ...data.map(row => headers.map(h => '"' + (row[h] || '') + '"').join(','))].join('\n');
       const a = document.createElement('a');
-      a.href = 'data:text/csv,' + encodeURIComponent(csv);
+      a.href = URL.createObjectURL(new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'}));
       a.download = filename;
       a.click();
     }
