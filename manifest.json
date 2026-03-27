@@ -2,7 +2,7 @@
   "name": "Salt Surf HR Portal",
   "short_name": "Salt Surf HR",
   "description": "HR Management Portal for Salt Surf Co., Ltd.",
-  "start_url": "./SaltSurf_HR_Portal.html",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
