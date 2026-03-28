@@ -1,3 +1,4 @@
+// Updated: 2026-03-28
 // Salt Surf HR Portal — Service Worker v1.0
 const CACHE_NAME = 'saltsurf-hr-v1';
 const ASSETS_TO_CACHE = [
