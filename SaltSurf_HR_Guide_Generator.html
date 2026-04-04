@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Salt Surf HR Guide Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Inter:wght@400;600;700&family=Noto+Sans+Myanmar:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body { font-family: 'Inter', 'Sarabun', 'Noto Sans Myanmar', sans-serif; margin: 0; padding: 20px; background: #f0f0f0; }
+#status { padding: 20px; background: white; border-radius: 8px; margin-bottom: 20px; }
+#render-area { position: absolute; left: -9999px; top: 0; }
+.page { width: 794px; min-height: 1123px; background: white; padding: 50px; box-sizing: border-box; font-size: 13px; line-height: 1.6; }
+.page.thai { font-family: 'Sarabun', sans-serif; }
+.page.myanmar { font-family: 'Noto Sans Myanmar', sans-serif; }
+.page.english { font-family: 'Inter', sans-serif; }
+.cover { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; min-height: 1023px; }
+.cover .logo { width: 120px; height: 120px; background: #003764; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: 700; margin-bottom: 30px; }
+.cover h1 { color: #003764; font-size: 28px; margin-bottom: 10px; }
+.cover h2 { color: #FF6C37; font-size: 20px; margin-bottom: 20px; }
+.cover .subtitle { color: #666; font-size: 14px; }
+.cover .url { color: #FF6C37; font-size: 13px; margin-top: 30px; }
+h3 { color: #003764; font-size: 16px; border-bottom: 2px solid #FF6C37; padding-bottom: 6px; margin: 18px 0 10px; }
+h4 { color: #FF6C37; font-size: 14px; margin: 12px 0 6px; }
+.menu-item { background: #f7f8fa; border-left: 3px solid #FF6C37; padding: 8px 12px; margin: 6px 0; border-radius: 0 6px 6px 0; }
+.menu-item .name { font-weight: 600; color: #003764; }
+.menu-item .desc { color: #666; font-size: 12px; }
+.step { display: flex; align-items: flex-start; gap: 10px; margin: 6px 0; }
+.step-num { background: #FF6C37; color: white; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+.step-text { flex: 1; }
+.note { background: #FFF3E0; border-left: 3px solid #FF6C37; padding: 8px 12px; margin: 8px 0; border-radius: 0 4px 4px 0; font-size: 12px; }
+.footer { text-align: center; color: #999; font-size: 10px; margin-top: 20px; padding-top: 10px; border-top: 1px solid #eee; }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 12px; }
+table th { background: #003764; color: white; padding: 6px 10px; text-align: left; }
+table td { padding: 6px 10px; border-bottom: 1px solid #eee; }
+table tr:nth-child(even) { background: #f9f9f9; }
+.credential-box { background: #E3F2FD; border: 1px solid #90CAF9; border-radius: 6px; padding: 10px 14px; margin: 8px 0; }
+.credential-box code { background: #003764; color: white; padding: 2px 6px; border-radius: 3px; font-size: 13px; }
+</style>
+</head>
+<body>
+<div id="status">
+  <h2>Salt Surf HR Portal - Guide Generator</h2>
+  <p id="progress">Loading fonts... please wait</p>
+  <div id="download-links"></div>
+</div>
+<div id="render-area"></div>
+
+<script>
+const { jsPDF } = window.jspdf;
+
+// All content for 5 roles x 3 languages
+const CONTENT = {
+  // ===== ROLE DEFINITIONS =====
+  roles: {
+    md: {
+      en: { title: 'Managing Director (MD)', loginUser: 'md', loginPass: 'md123' },
+      th: { title: 'ผู้บริหาร (MD)', loginUser: 'md', loginPass: 'md123' },
+      my: { title: 'မန်နေဂျင်းဒါရိုက်တာ (MD)', loginUser: 'md', loginPass: 'md123' }
+    },
+    hr: {
+      en: { title: 'Human Resources (HR)', loginUser: 'jubjang', loginPass: 'pass123' },
+      th: { title: 'ฝ่ายบุคคล (HR)', loginUser: 'jubjang', loginPass: 'pass123' },
+      my: { title: 'လူ့စွမ်းအားအရင်းအမြစ် (HR)', loginUser: 'jubjang', loginPass: 'pass123' }
+    },
+    depthead: {
+      en: { title: 'Department Head', loginUser: 'diew', loginPass: 'pass123' },
+      th: { title: 'หัวหน้าแผนก', loginUser: 'diew', loginPass: 'pass123' },
+      my: { title: 'ဌာနမှူး', loginUser: 'diew', loginPass: 'pass123' }
+    },
+    employee: {
+      en: { title: 'Employee', loginUser: 'itim', loginPass: 'pass123' },
+      th: { title: 'พนักงาน', loginUser: 'itim', loginPass: 'pass123' },
+      my: { title: 'ဝန်ထမ်း', loginUser: 'itim', loginPass: 'pass123' }
+    },
+    admin: {
+      en: { title: 'System Administrator', loginUser: 'admin', loginPass: 'admin123' },
+      th: { title: 'แอดมิน', loginUser: 'admin', loginPass: 'admin123' },
+      my: { title: 'စနစ်စီမံခန့်ခွဲသူ', loginUser: 'admin', loginPass: 'admin123' }
+    }
+  },
+
+  // ===== LABELS =====
+  labels: {
+    en: {
+      guideFor: 'User Guide for',
+      saltsurf: 'Salt Surf Co., Ltd.',
+      hrPortal: 'HR Portal',
+      version: 'Version 1.0 - March 2026',
+      url: 'saltsurf-hr-portal-t2f9.vercel.app',
+      login: 'How to Login',
+      loginStep1: 'Open your browser and go to the website address above',
+      loginStep2: 'Enter your username',
+      loginStep3: 'Enter your password',
+      loginStep4: 'Click the Login button',
+      yourCredentials: 'Your Login Credentials',
+      username: 'Username',
+      password: 'Password',
+      menuOverview: 'Menu Overview',
+      features: 'Features & How to Use',
+      dashboard: 'Dashboard',
+      dashboardDesc: 'View your leave balance, late count, and announcements',
+      leaveRequest: 'Leave Request',
+      leaveDesc: 'Submit leave requests (Sick, Personal, Annual)',
+      otRequest: 'OT Request',
+      otDesc: 'Submit overtime work requests',
+      mySchedule: 'My Schedule',
+      scheduleDesc: 'View your weekly work schedule and shifts',
+      contacts: 'Contacts',
+      contactsDesc: 'View company contact directory',
+      holidays: 'Public Holidays',
+      holidaysDesc: 'View public holiday calendar',
+      allLeave: 'All Leave Requests',
+      allLeaveDesc: 'View and approve/reject all employee leave requests',
+      allOT: 'All OT Requests',
+      allOTDesc: 'View and approve/reject all employee OT requests',
+      approvals: 'Approvals',
+      approvalsDesc: 'Approve or reject pending leave, OT, and schedule changes',
+      scheduleMgmt: 'Schedule Management',
+      scheduleMgmtDesc: 'Create and manage employee work schedules',
+      empMgmt: 'Employee Management',
+      empMgmtDesc: 'Add, edit, and manage employee records',
+      attendance: 'Attendance',
+      attendanceDesc: 'View attendance records and late arrivals',
+      reports: 'Reports',
+      reportsDesc: 'Download Excel reports for attendance, leave, OT, and more',
+      activityLog: 'Activity Log',
+      activityLogDesc: 'View all system activities and changes',
+      deptApprovals: 'Department Approvals',
+      deptApprovalsDesc: 'Approve or reject leave and OT from your department',
+      howToLeave: 'How to Submit a Leave Request',
+      leaveStep1: 'Click "Leave Request" in the menu',
+      leaveStep2: 'Select leave type (Sick/Personal/Annual)',
+      leaveStep3: 'Choose dates and full-day or hourly',
+      leaveStep4: 'Add reason and attach photo evidence if needed',
+      leaveStep5: 'Click Submit',
+      howToOT: 'How to Submit an OT Request',
+      otStep1: 'Click "OT Request" in the menu',
+      otStep2: 'Select date and enter start/end time',
+      otStep3: 'Enter reason for overtime',
+      otStep4: 'Click Submit',
+      howToApprove: 'How to Approve/Reject Requests',
+      approveStep1: 'Go to Approvals page',
+      approveStep2: 'Review the pending request details',
+      approveStep3: 'Click Approve or Reject button',
+      howToSchedule: 'How to Edit Schedules',
+      schedStep1: 'Go to Schedule Management',
+      schedStep2: 'Select department and week',
+      schedStep3: 'Click on a cell to change the shift',
+      schedStep4: 'Select new shift and save',
+      noteAdmin: 'Note: Admin cannot approve requests or manage schedules. Contact HR/MD for these actions.',
+      noteDepthead: 'Note: Schedule changes you make require HR/MD approval before taking effect.',
+      importantNotes: 'Important Notes',
+      langSwitch: 'You can switch language (Thai/English/Myanmar) using the buttons at the top right',
+      pageFooter: 'Salt Surf Co., Ltd. - HR Portal User Guide',
+      changeLang: 'Change Language',
+      changeLangDesc: 'Click Thai/EN/MY buttons on the top right corner of any page'
+    },
+    th: {
+      guideFor: 'คู่มือการใช้งานสำหรับ',
+      saltsurf: 'บริษัท ซอลท์เซิร์ฟ จำกัด',
+      hrPortal: 'ระบบบริหารงานบุคคล',
+      version: 'เวอร์ชัน 1.0 - มีนาคม 2569',
+      url: 'saltsurf-hr-portal-t2f9.vercel.app',
+      login: 'วิธีเข้าสู่ระบบ',
+      loginStep1: 'เปิดเว็บเบราว์เซอร์แล้วไปที่เว็บไซต์ด้านบน',
+      loginStep2: 'กรอกชื่อผู้ใช้',
+      loginStep3: 'กรอกรหัสผ่าน',
+      loginStep4: 'กดปุ่ม "เข้าสู่ระบบ"',
+      yourCredentials: 'ข้อมูลเข้าสู่ระบบของคุณ',
+      username: 'ชื่อผู้ใช้',
+      password: 'รหัสผ่าน',
+      menuOverview: 'เมนูที่ใช้งานได้',
+      features: 'ฟีเจอร์และวิธีใช้งาน',
+      dashboard: 'แดชบอร์ด',
+      dashboardDesc: 'ดูยอดวันลาคงเหลือ จำนวนสาย และประกาศ',
+      leaveRequest: 'ขอลางาน',
+      leaveDesc: 'ส่งคำขอลา (ลาป่วย ลากิจ ลาพักร้อน)',
+      otRequest: 'ขอทำ OT',
+      otDesc: 'ส่งคำขอทำงานล่วงเวลา',
+      mySchedule: 'ตารางงานของฉัน',
+      scheduleDesc: 'ดูตารางเวรและกะทำงานประจำสัปดาห์',
+      contacts: 'รายชื่อติดต่อ',
+      contactsDesc: 'ดูรายชื่อผู้ติดต่อในบริษัท',
+      holidays: 'วันหยุดนักขัตฤกษ์',
+      holidaysDesc: 'ดูปฏิทินวันหยุดนักขัตฤกษ์',
+      allLeave: 'คำขอลาทั้งหมด',
+      allLeaveDesc: 'ดูและอนุมัติ/ปฏิเสธคำขอลาของพนักงานทุกคน',
+      allOT: 'คำขอ OT ทั้งหมด',
+      allOTDesc: 'ดูและอนุมัติ/ปฏิเสธคำขอ OT ของพนักงานทุกคน',
+      approvals: 'การอนุมัติ',
+      approvalsDesc: 'อนุมัติหรือปฏิเสธคำขอลา OT และการเปลี่ยนตาราง',
+      scheduleMgmt: 'จัดการตารางงาน',
+      scheduleMgmtDesc: 'สร้างและจัดการตารางเวรของพนักงาน',
+      empMgmt: 'จัดการพนักงาน',
+      empMgmtDesc: 'เพิ่ม แก้ไข และจัดการข้อมูลพนักงาน',
+      attendance: 'บันทึกเวลาเข้างาน',
+      attendanceDesc: 'ดูบันทึกเวลาเข้างานและการมาสาย',
+      reports: 'รายงาน',
+      reportsDesc: 'ดาวน์โหลดรายงาน Excel สำหรับเวลาเข้างาน วันลา OT และอื่นๆ',
+      activityLog: 'บันทึกกิจกรรม',
+      activityLogDesc: 'ดูกิจกรรมและการเปลี่ยนแปลงทั้งหมดในระบบ',
+      deptApprovals: 'อนุมัติของแผนก',
+      deptApprovalsDesc: 'อนุมัติหรือปฏิเสธคำขอลาและ OT จากแผนกของคุณ',
+      howToLeave: 'วิธีส่งคำขอลา',
+      leaveStep1: 'กดเมนู "ขอลางาน"',
+      leaveStep2: 'เลือกประเภทการลา (ลาป่วย/ลากิจ/ลาพักร้อน)',
+      leaveStep3: 'เลือกวันที่และเลือกลาเต็มวันหรือรายชั่วโมง',
+      leaveStep4: 'กรอกเหตุผลและแนบรูปถ่ายหลักฐาน (ถ้ามี)',
+      leaveStep5: 'กดปุ่ม "ส่งคำขอ"',
+      howToOT: 'วิธีส่งคำขอ OT',
+      otStep1: 'กดเมนู "ขอทำ OT"',
+      otStep2: 'เลือกวันที่และกรอกเวลาเริ่ม/สิ้นสุด',
+      otStep3: 'กรอกเหตุผลในการทำ OT',
+      otStep4: 'กดปุ่ม "ส่งคำขอ"',
+      howToApprove: 'วิธีอนุมัติ/ปฏิเสธคำขอ',
+      approveStep1: 'ไปที่หน้า "การอนุมัติ"',
+      approveStep2: 'ตรวจสอบรายละเอียดคำขอที่รอดำเนินการ',
+      approveStep3: 'กดปุ่ม "อนุมัติ" หรือ "ปฏิเสธ"',
+      howToSchedule: 'วิธีแก้ไขตารางงาน',
+      schedStep1: 'ไปที่ "จัดการตารางงาน"',
+      schedStep2: 'เลือกแผนกและสัปดาห์',
+      schedStep3: 'กดที่ช่องเพื่อเปลี่ยนกะ',
+      schedStep4: 'เลือกกะใหม่แล้วบันทึก',
+      noteAdmin: 'หมายเหตุ: แอดมินไม่สามารถอนุมัติคำขอหรือจัดการตารางงานได้ กรุณาติดต่อ HR/MD',
+      noteDepthead: 'หมายเหตุ: การเปลี่ยนแปลงตารางที่คุณทำต้องได้รับการอนุมัติจาก HR/MD ก่อน',
+      importantNotes: 'หมายเหตุสำคัญ',
+      langSwitch: 'คุณสามารถเปลี่ยนภาษา (ไทย/อังกฤษ/เมียนมา) ได้ที่ปุ่มมุมขวาบน',
+      pageFooter: 'บริษัท ซอลท์เซิร์ฟ จำกัด - คู่มือระบบบริหารงานบุคคล',
+      changeLang: 'เปลี่ยนภาษา',
+      changeLangDesc: 'กดปุ่ม ไทย/EN/MY ที่มุมขวาบนของทุกหน้า'
+    },
+    my: {
+      guideFor: 'အသုံးပြုသူလမ်းညွှန်',
+      saltsurf: 'Salt Surf Co., Ltd.',
+      hrPortal: 'HR Portal',
+      version: 'Version 1.0 - March 2026',
+      url: 'saltsurf-hr-portal-t2f9.vercel.app',
+      login: 'ဝင်ရောက်နည်း',
+      loginStep1: 'ဘရောက်ဆာဖွင့်ပြီး အထက်ပါ website လိပ်စာသို့ သွားပါ',
+      loginStep2: 'အသုံးပြုသူအမည် ထည့်ပါ',
+      loginStep3: 'စကားဝှက် ထည့်ပါ',
+      loginStep4: '"ဝင်ရောက်" ခလုတ်ကို နှိပ်ပါ',
+      yourCredentials: 'သင့်ဝင်ရောက်မှု အချက်အလက်',
+      username: 'အသုံးပြုသူအမည်',
+      password: 'စကားဝှက်',
+      menuOverview: 'မီနူးအကျဉ်းချုပ်',
+      features: 'လုပ်ဆောင်ချက်များနှင့် အသုံးပြုနည်း',
+      dashboard: 'ဒက်ရှ်ဘုတ်',
+      dashboardDesc: 'ခွင့်လက်ကျန်၊ နောက်ကျမှု အရေအတွက်နှင့် ကြေညာချက်များ ကြည့်ပါ',
+      leaveRequest: 'ခွင့်တောင်းခြင်း',
+      leaveDesc: 'ခွင့်လျှောက်ထားပါ (ဖျားနာခွင့်၊ ကိုယ်ရေးကိုယ်တာခွင့်၊ နှစ်ပတ်လည်ခွင့်)',
+      otRequest: 'OT တောင်းခြင်း',
+      otDesc: 'အချိန်ပိုလုပ်ခွင့် တောင်းပါ',
+      mySchedule: 'ကျွန်ုပ်၏အလုပ်ဇယား',
+      scheduleDesc: 'အပတ်စဉ်အလုပ်ဇယားနှင့် အလှည့်ကျ ကြည့်ပါ',
+      contacts: 'ဆက်သွယ်ရန်',
+      contactsDesc: 'ကုမ္ပဏီ ဆက်သွယ်ရန်စာရင်း ကြည့်ပါ',
+      holidays: 'ပြည်သူ့ရုံးပိတ်ရက်',
+      holidaysDesc: 'ပြည်သူ့ရုံးပိတ်ရက် ပြက္ခဒိန် ကြည့်ပါ',
+      allLeave: 'ခွင့်တောင်းမှုအားလုံး',
+      allLeaveDesc: 'ဝန်ထမ်းအားလုံး၏ ခွင့်တောင်းမှုကို ကြည့်ပြီး အတည်ပြု/ငြင်းပယ်ပါ',
+      allOT: 'OT တောင်းမှုအားလုံး',
+      allOTDesc: 'ဝန်ထမ်းအားလုံး၏ OT တောင်းမှုကို ကြည့်ပြီး အတည်ပြု/ငြင်းပယ်ပါ',
+      approvals: 'အတည်ပြုခြင်း',
+      approvalsDesc: 'ခွင့်၊ OT နှင့် ဇယားပြောင်းလဲမှုများကို အတည်ပြု/ငြင်းပယ်ပါ',
+      scheduleMgmt: 'ဇယားစီမံခန့်ခွဲမှု',
+      scheduleMgmtDesc: 'ဝန်ထမ်းအလုပ်ဇယား ဖန်တီးပြီး စီမံပါ',
+      empMgmt: 'ဝန်ထမ်းစီမံခန့်ခွဲမှု',
+      empMgmtDesc: 'ဝန်ထမ်းမှတ်တမ်း ထည့်သွင်း၊ တည်းဖြတ်ပြီး စီမံပါ',
+      attendance: 'တက်ရောက်မှု',
+      attendanceDesc: 'တက်ရောက်မှုမှတ်တမ်းနှင့် နောက်ကျမှု ကြည့်ပါ',
+      reports: 'အစီရင်ခံစာ',
+      reportsDesc: 'တက်ရောက်မှု၊ ခွင့်၊ OT အစရှိသည့် Excel အစီရင်ခံစာ ဒေါင်းလုဒ်လုပ်ပါ',
+      activityLog: 'လုပ်ဆောင်ချက်မှတ်တမ်း',
+      activityLogDesc: 'စနစ်အတွင်း လုပ်ဆောင်ချက်များနှင့် ပြောင်းလဲမှုအားလုံး ကြည့်ပါ',
+      deptApprovals: 'ဌာနအတည်ပြုချက်',
+      deptApprovalsDesc: 'သင့်ဌာနမှ ခွင့်နှင့် OT ကို အတည်ပြု/ငြင်းပယ်ပါ',
+      howToLeave: 'ခွင့်တောင်းနည်း',
+      leaveStep1: 'မီနူးတွင် "ခွင့်တောင်းခြင်း" ကို နှိပ်ပါ',
+      leaveStep2: 'ခွင့်အမျိုးအစား ရွေးပါ (ဖျားနာ/ကိုယ်ရေး/နှစ်ပတ်လည်)',
+      leaveStep3: 'ရက်စွဲ ရွေးပြီး တစ်ရက်လုံးခွင့် သို့ နာရီအလိုက်ခွင့် ရွေးပါ',
+      leaveStep4: 'အကြောင်းပြချက် ရေးပြီး ဓာတ်ပုံ ပူးတွဲပါ (လိုအပ်လျှင်)',
+      leaveStep5: '"တင်သွင်း" ခလုတ်ကို နှိပ်ပါ',
+      howToOT: 'OT တောင်းနည်း',
+      otStep1: 'မီနူးတွင် "OT တောင်းခြင်း" ကို နှိပ်ပါ',
+      otStep2: 'ရက်စွဲ ရွေးပြီး အစ/အဆုံးအချိန် ထည့်ပါ',
+      otStep3: 'OT အကြောင်းပြချက် ထည့်ပါ',
+      otStep4: '"တင်သွင်း" ခလုတ်ကို နှိပ်ပါ',
+      howToApprove: 'တောင်းဆိုမှု အတည်ပြု/ငြင်းပယ်နည်း',
+      approveStep1: '"အတည်ပြုခြင်း" စာမျက်နှာသို့ သွားပါ',
+      approveStep2: 'စောင့်ဆိုင်းနေသော တောင်းဆိုမှု အသေးစိတ် စစ်ဆေးပါ',
+      approveStep3: '"အတည်ပြု" သို့ "ငြင်းပယ်" ခလုတ်ကို နှိပ်ပါ',
+      howToSchedule: 'ဇယားတည်းဖြတ်နည်း',
+      schedStep1: '"ဇယားစီမံခန့်ခွဲမှု" သို့ သွားပါ',
+      schedStep2: 'ဌာနနှင့် အပတ် ရွေးပါ',
+      schedStep3: 'အလှည့်ကျပြောင်းရန် ကွက်ကို နှိပ်ပါ',
+      schedStep4: 'အလှည့်ကျအသစ် ရွေးပြီး သိမ်းပါ',
+      noteAdmin: 'မှတ်ချက်: Admin သည် တောင်းဆိုမှုများ အတည်ပြုခြင်း သို့ ဇယားစီမံခြင်း မပြုလုပ်နိုင်ပါ။ HR/MD ကို ဆက်သွယ်ပါ။',
+      noteDepthead: 'မှတ်ချက်: သင်ပြုလုပ်သော ဇယားပြောင်းလဲမှုများသည် HR/MD အတည်ပြုချက် လိုအပ်ပါသည်။',
+      importantNotes: 'အရေးကြီးမှတ်ချက်',
+      langSwitch: 'ညာဘက်အပေါ်ထောင့်ရှိ ခလုတ်များဖြင့် ဘာသာစကား (ไทย/EN/MY) ပြောင်းနိုင်ပါသည်',
+      pageFooter: 'Salt Surf Co., Ltd. - HR Portal User Guide',
+      changeLang: 'ဘာသာစကားပြောင်းရန်',
+      changeLangDesc: 'မည်သည့်စာမျက်နှာ၏ ညာဘက်အပေါ်ထောင့်ရှိ ไทย/EN/MY ခလုတ်များကို နှိပ်ပါ'
+    }
+  },
+
+  // Menu items per role
+  menus: {
+    md: ['dashboard', 'allLeave', 'allOT', 'approvals', 'scheduleMgmt', 'empMgmt', 'attendance', 'contacts', 'reports', 'activityLog', 'holidays'],
+    hr: ['dashboard', 'allLeave', 'allOT', 'approvals', 'scheduleMgmt', 'empMgmt', 'attendance', 'contacts', 'reports', 'activityLog', 'holidays'],
+    depthead: ['dashboard', 'leaveRequest', 'otRequest', 'scheduleMgmt', 'deptApprovals', 'contacts', 'holidays'],
+    employee: ['dashboard', 'leaveRequest', 'otRequest', 'mySchedule', 'contacts', 'holidays'],
+    admin: ['dashboard', 'allLeave', 'allOT', 'empMgmt', 'attendance', 'contacts', 'reports', 'activityLog', 'holidays']
+  },
+
+  // Instructions per role
+  instructions: {
+    md: ['howToApprove', 'howToSchedule', 'howToLeave', 'howToOT'],
+    hr: ['howToApprove', 'howToSchedule', 'howToLeave', 'howToOT'],
+    depthead: ['howToLeave', 'howToOT', 'howToApprove', 'howToSchedule'],
+    employee: ['howToLeave', 'howToOT'],
+    admin: ['howToLeave', 'howToOT']
+  },
+
+  // Steps for each instruction
+  steps: {
+    howToLeave: ['leaveStep1', 'leaveStep2', 'leaveStep3', 'leaveStep4', 'leaveStep5'],
+    howToOT: ['otStep1', 'otStep2', 'otStep3', 'otStep4'],
+    howToApprove: ['approveStep1', 'approveStep2', 'approveStep3'],
+    howToSchedule: ['schedStep1', 'schedStep2', 'schedStep3', 'schedStep4']
+  }
+};
+
+function buildPageHTML(role, lang) {
+  const L = CONTENT.labels[lang];
+  const R = CONTENT.roles[role][lang];
+  const menus = CONTENT.menus[role];
+  const instructions = CONTENT.instructions[role];
+  const fontClass = lang === 'th' ? 'thai' : lang === 'my' ? 'myanmar' : 'english';
+
+  // Cover page
+  let html = `<div class="page ${fontClass} cover">
+    <div class="logo">SALT<br>SURF</div>
+    <h1>${L.saltsurf}</h1>
+    <h2>${L.hrPortal}</h2>
+    <div style="width:60px; height:3px; background:#FF6C37; margin: 15px auto;"></div>
+    <p style="font-size:18px; color:#003764; font-weight:600; margin-top:20px;">${L.guideFor}</p>
+    <p style="font-size:22px; color:#FF6C37; font-weight:700;">${R.title}</p>
+    <p class="subtitle">${L.version}</p>
+    <p class="url">${L.url}</p>
+  </div>`;
+
+  // Content page(s)
+  html += `<div class="page ${fontClass}">`;
+
+  // Login section
+  html += `<h3>${L.login}</h3>`;
+  html += `<div class="credential-box">
+    <strong>${L.yourCredentials}:</strong><br>
+    ${L.username}: <code>${R.loginUser}</code> &nbsp; ${L.password}: <code>${R.loginPass}</code>
+  </div>`;
+  const loginSteps = ['loginStep1', 'loginStep2', 'loginStep3', 'loginStep4'];
+  loginSteps.forEach((s, i) => {
+    html += `<div class="step"><div class="step-num">${i+1}</div><div class="step-text">${L[s]}</div></div>`;
+  });
+
+  // Menu overview
+  html += `<h3>${L.menuOverview}</h3>`;
+  menus.forEach(m => {
+    const name = L[m] || m;
+    const desc = L[m + 'Desc'] || '';
+    html += `<div class="menu-item"><div class="name">${name}</div><div class="desc">${desc}</div></div>`;
+  });
+
+  // Language switch tip
+  html += `<h3>${L.changeLang}</h3>`;
+  html += `<div class="note">${L.changeLangDesc}</div>`;
+
+  html += `<div class="footer">${L.pageFooter}</div></div>`;
+
+  // Instructions page
+  html += `<div class="page ${fontClass}">`;
+  html += `<h3>${L.features}</h3>`;
+
+  instructions.forEach(instr => {
+    html += `<h4>${L[instr]}</h4>`;
+    const steps = CONTENT.steps[instr];
+    steps.forEach((s, i) => {
+      html += `<div class="step"><div class="step-num">${i+1}</div><div class="step-text">${L[s]}</div></div>`;
+    });
+  });
+
+  // Role-specific notes
+  if (role === 'admin') {
+    html += `<h3>${L.importantNotes}</h3><div class="note">${L.noteAdmin}</div>`;
+  } else if (role === 'depthead') {
+    html += `<h3>${L.importantNotes}</h3><div class="note">${L.noteDepthead}</div>`;
+  }
+
+  // Language switch reminder
+  html += `<div class="note" style="margin-top:20px;">${L.langSwitch}</div>`;
+  html += `<div class="footer">${L.pageFooter}</div></div>`;
+
+  return html;
+}
+
+async function generatePDF(role, lang) {
+  const renderArea = document.getElementById('render-area');
+  renderArea.innerHTML = buildPageHTML(role, lang);
+
+  // Wait for fonts to render
+  await new Promise(r => setTimeout(r, 500));
+
+  const pages = renderArea.querySelectorAll('.page');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+
+  for (let i = 0; i < pages.length; i++) {
+    if (i > 0) pdf.addPage();
+    const canvas = await html2canvas(pages[i], {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      width: 794,
+      windowWidth: 794
+    });
+    const imgData = canvas.toDataURL('image/jpeg', 0.95);
+    pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+  }
+
+  const langLabel = { en: 'EN', th: 'TH', my: 'MY' }[lang];
+  const roleLabel = { md: 'MD', hr: 'HR', depthead: 'DeptHead', employee: 'Employee', admin: 'Admin' }[role];
+  const filename = `SaltSurf_HR_Guide_${roleLabel}_${langLabel}.pdf`;
+
+  pdf.save(filename);
+  return filename;
+}
+
+async function generateCombinedPDF(role) {
+  const langs = ['en', 'th', 'my'];
+  const renderArea = document.getElementById('render-area');
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  let firstPage = true;
+
+  for (const lang of langs) {
+    renderArea.innerHTML = buildPageHTML(role, lang);
+    await new Promise(r => setTimeout(r, 500));
+
+    const pages = renderArea.querySelectorAll('.page');
+    for (let i = 0; i < pages.length; i++) {
+      if (!firstPage) pdf.addPage();
+      firstPage = false;
+      const canvas = await html2canvas(pages[i], {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794
+      });
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    }
+  }
+
+  const roleLabel = { md: 'MD', hr: 'HR', depthead: 'DeptHead', employee: 'Employee', admin: 'Admin' }[role];
+  const filename = `SaltSurf_HR_Guide_${roleLabel}.pdf`;
+  pdf.save(filename);
+  return filename;
+}
+
+async function generateAll() {
+  const roles = ['md', 'hr', 'depthead', 'employee', 'admin'];
+  const progress = document.getElementById('progress');
+  const links = document.getElementById('download-links');
+  const total = roles.length;
+
+  // Wait for fonts
+  await document.fonts.ready;
+  progress.textContent = 'Fonts loaded. Generating PDFs (all 3 languages per role)...';
+  await new Promise(r => setTimeout(r, 1000));
+
+  for (let i = 0; i < roles.length; i++) {
+    const role = roles[i];
+    const roleName = CONTENT.roles[role]['en'].title;
+    progress.textContent = `Generating ${i+1}/${total}: ${roleName} (EN + TH + MY)...`;
+    await new Promise(r => setTimeout(r, 200));
+
+    try {
+      const filename = await generateCombinedPDF(role);
+      links.innerHTML += `<p style="color:green;">✓ ${filename} (English + Thai + Myanmar)</p>`;
+    } catch(e) {
+      links.innerHTML += `<p style="color:red;">✗ ${role}: ${e.message}</p>`;
+    }
+  }
+
+  progress.textContent = `Done! Generated ${total} PDF files. Check your Downloads folder.`;
+}
+
+// Auto-start after brief delay
+setTimeout(generateAll, 2000);
+</script>
+</body>
+</html>
