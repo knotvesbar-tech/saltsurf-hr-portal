@@ -357,9 +357,55 @@
       ]
     };
 
+    // ===== LOCAL STORAGE PERSISTENCE =====
+    var STORAGE_KEY = 'saltsurf_hr_data';
+    var SAVE_KEYS = ['employees', 'departments', 'leaves', 'ots', 'schedules', 'logs', 'attendance', 'announcements', 'disciplines', 'pendingSchedules', 'backOfficeContacts', 'holidays'];
+
+    function saveToStorage() {
+      try {
+        var data = {};
+        SAVE_KEYS.forEach(function(key) { data[key] = APP[key]; });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      } catch(e) {
+        console.warn('Storage save failed:', e);
+      }
+    }
+
+    function loadFromStorage() {
+      try {
+        var raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return false;
+        var data = JSON.parse(raw);
+        SAVE_KEYS.forEach(function(key) {
+          if (data[key] !== undefined) APP[key] = data[key];
+        });
+        return true;
+      } catch(e) {
+        console.warn('Storage load failed:', e);
+        return false;
+      }
+    }
+
+    // Auto-save on any data change — wrap with debounce
+    var _saveTimer = null;
+    function scheduleSave() {
+      if (_saveTimer) clearTimeout(_saveTimer);
+      _saveTimer = setTimeout(saveToStorage, 300);
+    }
+
+    function clearStorage() {
+      if (verifyRole() !== 'admin' && verifyRole() !== 'md') {
+        showToast('Only Admin/MD can reset data', 'error'); return;
+      }
+      if (!confirm('⚠️ This will reset ALL saved data and reload the page. Are you sure?')) return;
+      localStorage.removeItem(STORAGE_KEY);
+      location.reload();
+    }
+
     function initApp() {
-      // Attendance is now populated via file upload, start empty
-      APP.attendance = [];
+      loadFromStorage();
+      // Attendance is now populated via file upload, start empty if not loaded
+      if (!APP.attendance || APP.attendance.length === 0) APP.attendance = [];
       renderLoginPage();
       renderSignupPage();
     }
@@ -1004,6 +1050,7 @@
       }
       APP.leaves.push(leave);
       leavePhotosTemp = [];
+      scheduleSave();
       showToast(t('leaveSubmitted'), 'success');
       closeModal();
       renderLeaveRequest();
@@ -2472,6 +2519,7 @@
       APP.attendance.forEach(function(a) {
         recalcAttendanceForEmployee(a.empId, a.date);
       });
+      scheduleSave();
     }
 
     function getDefaultDateRange() {
@@ -3344,6 +3392,7 @@
       cutoff.setDate(cutoff.getDate() - 30);
       var cutoffISO = cutoff.toISOString();
       APP.logs = APP.logs.filter(function(log) { return log.ts >= cutoffISO; });
+      scheduleSave();
     }
 
     function openModal(title, html) {
@@ -3402,6 +3451,11 @@
         navigateTo(savedPage);
       }
     }
+
+    // Flush any pending save before page unload
+    window.addEventListener('beforeunload', function() {
+      if (_saveTimer) { clearTimeout(_saveTimer); saveToStorage(); }
+    });
 
     // Initialize on page load
     window.addEventListener('load', function() {
