@@ -490,12 +490,16 @@
       if (!APP.attendance || APP.attendance.length === 0) APP.attendance = [];
       renderLoginPage();
       renderSignupPage();
+      // Try to restore previous session (stay logged in after refresh)
+      var sessionRestored = restoreSession();
       // Then load from Firebase (may overwrite localStorage data with newer data)
       loadFromFirebase(function(loaded) {
         if (loaded) {
           if (!APP.attendance || APP.attendance.length === 0) APP.attendance = [];
-          // Re-render login if no one is logged in yet
-          if (!APP.currentUser) {
+          if (sessionRestored) {
+            // Re-restore session with fresh Firebase data
+            restoreSession();
+          } else if (!APP.currentUser) {
             renderLoginPage();
             renderSignupPage();
           }
@@ -514,7 +518,8 @@
         birthday: 'วันเกิด', address: 'ที่อยู่', nationality: 'สัญชาติ', email: 'อีเมล', nickname: 'ชื่อเล่น', requestLeave: 'ขอลา', from: 'จาก', to: 'ถึง', search: 'ค้นหา', all: 'ทั้งหมด', checkOut: 'ออก', recalcSchedule: 'คำนวณจากตาราง', attendanceNote: 'สถานะเชื่อมโยงกับการจัดตารางงานและ OT ที่อนุมัติ กะที่มีเครื่องหมาย * ใช้ค่าเริ่มต้น (กะ A วันจันทร์-ศุกร์) ตั้งค่าตารางและอนุมัติ OT ก่อน แล้วคลิกคำนวณจากตาราง', records: 'รายการ', allEmployeesReport: 'รายงานพนักงานทั้งหมด (Excel)', individualReport: 'รายงานรายบุคคล (Excel)', lateSummary: 'สรุปการมาสาย (Excel)', offDayScanTitle: 'สแกนในวันหยุดที่กำหนด — ไม่มี OT ที่อนุมัติ', offDayScanNote: 'พนักงานต่อไปนี้สแกนเข้าในวันหยุด กรุณาตรวจสอบว่าได้อนุมัติ OT หรือไม่', leaveRequests: 'คำขอลา', otRequestsLabel: 'คำขอ OT', leaveRequestsPending: 'คำขอลารอดำเนินการ', otRequestsPending: 'คำขอ OT รอดำเนินการ', time: 'เวลา', unknown: 'ไม่ทราบ', onlyHRMDApprove: 'เฉพาะ HR/MD เท่านั้นที่อนุมัติได้', onlyHRMDReject: 'เฉพาะ HR/MD เท่านั้นที่ปฏิเสธได้', adminNoApproval: 'แอดมินไม่มีสิทธิ์อนุมัติ', adminNoSchedule: 'แอดมินไม่มีสิทธิ์จัดตารางงาน', searchIdNameNickname: 'ค้นหา (รหัส / ชื่อ / ชื่อเล่น)', fingerprint: 'ลายนิ้วมือ', level: 'ระดับ', empStartDate: 'วันเริ่มงาน', employeeId: 'รหัสพนักงาน', fingerprintId: 'รหัสลายนิ้วมือ', username: 'ชื่อผู้ใช้', passwordField: 'รหัสผ่าน', fullName: 'ชื่อ-นามสกุล', section: 'แผนกย่อย', sectionPlaceholder: 'เช่น Bakery, Bar, Service', employeeDeleted: 'ลบพนักงานแล้ว', employeeUpdated: 'อัพเดตข้อมูลพนักงานแล้ว', addEmployee: 'เพิ่มพนักงาน', deptHead: 'หัวหน้าแผนก', admin: 'แอดมิน', hr: 'ฝ่ายบุคคล', md: 'ผู้บริหาร', leaveReportCSV: 'รายงานการลา (Excel)', otReportCSV: 'รายงาน OT (Excel)', attendanceReportCSV: 'รายงานการเข้างาน (Excel)', weeklyScheduleCSV: 'ตารางงานรายสัปดาห์ (Excel)', activityLogCSV: 'บันทึกกิจกรรม (Excel)', total: 'รวม', retentionPolicy: 'นโยบายเก็บข้อมูล: ขั้นต่ำ 30 วัน', timestamp: 'เวลา', user: 'ผู้ใช้', detail: 'รายละเอียด', searchContacts: 'ค้นหาด้วย รหัส, ชื่อ, ชื่อเล่น, แผนก...', contactUpdated: 'อัพเดตข้อมูลติดต่อแล้ว', contactAdded: 'เพิ่มข้อมูลติดต่อแล้ว', contactDeleted: 'ลบข้อมูลติดต่อแล้ว', allSections: '-- ทุกแผนก --', allEmployeesOption: '-- พนักงานทั้งหมด --', clickToChangeShift: 'คลิกที่ช่องเพื่อเปลี่ยนกะ', selectShift: 'เลือกกะ', overall: 'ทั้งหมด', scheduleDownloaded: 'ดาวน์โหลดตารางงานแล้ว', noEmployeeSelected: 'ไม่ได้เลือกพนักงาน', downloadSchedule: 'ดาวน์โหลดตารางงาน', pleaseFillAll: 'กรุณากรอกข้อมูลให้ครบ', endAfterStart: 'วันที่สิ้นสุดต้องหลังวันที่เริ่ม', endTimeAfterStart: 'เวลาสิ้นสุดต้องหลังเวลาเริ่ม', otSubmitted: 'ส่งคำขอ OT แล้ว', deletedMsg: 'ลบแล้ว', noLeaveData: 'ไม่มีข้อมูลการลาในช่วงที่เลือก', noOTData: 'ไม่มีข้อมูล OT ในช่วงที่เลือก', selectEmployeeFirst: 'กรุณาเลือกพนักงานก่อน', noAttendanceData: 'ไม่มีข้อมูลเข้างานในช่วงที่เลือก', nameUsernameRequired: 'ต้องกรอกชื่อและชื่อผู้ใช้', newRequest: 'คำขอใหม่', idSlashName: 'รหัส / ชื่อ', employees: 'พนักงาน', manageDepartments: 'จัดการแผนก', addDepartment: 'เพิ่มแผนก', editDepartment: 'แก้ไขแผนก', deleteDepartment: 'ลบแผนก', deptName: 'ชื่อแผนก', deptAdded: 'เพิ่มแผนกแล้ว', deptUpdated: 'อัพเดตแผนกแล้ว', deptDeleted: 'ลบแผนกแล้ว', deptInUse: 'ไม่สามารถลบแผนกนี้ได้ มีพนักงานอยู่ในแผนก', deptExists: 'ชื่อแผนกนี้มีอยู่แล้ว', enterDeptName: 'กรุณาใส่ชื่อแผนก', lineId: 'LINE ID', createAccount: 'สร้างบัญชี', backToLogin: 'กลับไปหน้าเข้าสู่ระบบ', pleaseFillRequired: 'กรุณากรอกข้อมูลที่จำเป็น', empIdExists: 'รหัสพนักงานนี้มีอยู่แล้ว', accountCreated: 'สร้างบัญชีสำเร็จ', readingFile: 'กำลังอ่านไฟล์', errorReadingFile: 'เกิดข้อผิดพลาดในการอ่านไฟล์', loadingExcelParser: 'กำลังโหลดตัวแปลง Excel...', excelParserLoaded: 'โหลดตัวแปลงสำเร็จ กำลังประมวลผล...', excelParserError: 'โหลดตัวแปลง Excel ไม่สำเร็จ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต', errorParsingFile: 'เกิดข้อผิดพลาดในการแยกวิเคราะห์ไฟล์', histSickLeave: 'ลาป่วยสะสม (ก่อนใช้ระบบ)', histPersonalLeave: 'ลากิจสะสม (ก่อนใช้ระบบ)', histAnnualLeave: 'ลาพักร้อนสะสม (ก่อนใช้ระบบ)', historicalLeave: 'ข้อมูลการลาย้อนหลัง', quotaExceeded: 'สิทธิ์การลาเกินโควตา', resetPassword: 'รีเซ็ตรหัสผ่าน', confirmResetPassword: 'ต้องการรีเซ็ตรหัสผ่านของ {name} หรือไม่? รหัสผ่านจะถูกเปลี่ยนเป็น "reset123" และพนักงานต้องตั้งรหัสผ่านใหม่เมื่อเข้าสู่ระบบครั้งถัดไป', passwordResetDone: 'รีเซ็ตรหัสผ่านเรียบร้อย (รหัสชั่วคราว: reset123)', mustChangePasswordMsg: 'รหัสผ่านของคุณถูกรีเซ็ต กรุณาตั้งรหัสผ่านใหม่', newPassword: 'รหัสผ่านใหม่', confirmPassword: 'ยืนยันรหัสผ่าน', changePassword: 'เปลี่ยนรหัสผ่าน', passwordTooShort: 'รหัสผ่านต้องมีอย่างน้อย 4 ตัวอักษร', passwordMismatch: 'รหัสผ่านไม่ตรงกัน', passwordCannotBeDefault: 'ไม่สามารถใช้รหัสชั่วคราวเป็นรหัสผ่านใหม่ได้', passwordChanged: 'เปลี่ยนรหัสผ่านสำเร็จ', accessDenied: 'ไม่มีสิทธิ์เข้าถึงหน้านี้', cannotApproveOwn: 'ไม่สามารถอนุมัติคำขอของตนเองได้', cannotApproveDiffDept: 'ไม่สามารถอนุมัติคำขอจากแผนกอื่นได้',
         addHoliday: 'เพิ่มวันหยุด', editHoliday: 'แก้ไขวันหยุด', holidayName: 'ชื่อวันหยุด', holidayAdded: 'เพิ่มวันหยุดแล้ว', holidayUpdated: 'อัพเดตวันหยุดแล้ว', holidayDeleted: 'ลบวันหยุดแล้ว', holidayExists: 'วันหยุดนี้มีอยู่แล้ว',
         disciplinary: 'บทลงโทษทางวินัย', reportDisciplinary: 'รายงานบทลงโทษ', disciplinaryApprovals: 'อนุมัติบทลงโทษ', disciplinaryRecords: 'ประวัติบทลงโทษ', manageDisciplinary: 'จัดการบทลงโทษ', incidentType: 'ประเภทเหตุการณ์', severityCode: 'ระดับความรุนแรง', offenseTrack: 'ประเภทความผิด', minorOffense: 'ความผิดเล็กน้อย', seriousOffense: 'ความผิดร้ายแรง', verbalWarning: 'ตักเตือนด้วยวาจา', writtenWarning: 'หนังสือเตือน', payCutDemotion: 'ตัดเงินเดือน/ลดตำแหน่ง', suspension: 'พักงาน', termination: 'ปลดออก', disciplinaryStep: 'ขั้นตอนการลงโทษ', selectEmployee: 'เลือกพนักงาน', incidentDate: 'วันที่เกิดเหตุ', incidentDescription: 'รายละเอียดเหตุการณ์', submitDisciplinary: 'ส่งรายงาน', disciplinarySubmitted: 'ส่งรายงานบทลงโทษแล้ว', disciplinaryApproved: 'อนุมัติบทลงโทษแล้ว', disciplinaryRejected: 'ปฏิเสธบทลงโทษแล้ว', resetDisciplinary: 'ล้างบทลงโทษ', confirmResetDisciplinary: 'ต้องการล้างบทลงโทษของ {name} หรือไม่?', disciplinaryReset: 'ล้างบทลงโทษเรียบร้อย', noDisciplinaryData: 'ไม่มีประวัติบทลงโทษ', activeWarnings: 'คำเตือนที่มีผล', expired: 'หมดอายุ', warningExpiry: 'หนังสือเตือนหมดอายุ 1 ปี', code55: 'ปกติ (55)', code91: 'เสียหาย-ไม่สูญรายได้ (91)', code92: 'เสี่ยงสูญรายได้ (92)', code93: 'สูญรายได้/ทรัพย์สิน (93)', code94: 'เสียชื่อเสียง/ทุจริต (94)', reportedBy: 'รายงานโดย', approvedBy: 'อนุมัติโดย', offenseCount: 'ครั้งที่', selectIncident: 'เลือกเหตุการณ์', foodDrinkDirty: 'อาหาร/เครื่องดื่มสกปรกหรือมีกลิ่นผิดปกติ', foreignObject: 'สิ่งแปลกปลอมในอาหาร', foodMismatch: 'รสชาติ/หน้าตาอาหารไม่ตรงกับสื่อ', serviceDelay: 'ให้บริการช้าเกินกำหนด', customerInjury: 'ลูกค้าได้รับบาดเจ็บ', equipmentFailure: 'อุปกรณ์เซิร์ฟขัดข้องระหว่างบทเรียน', studentUnattended: 'นักเรียนถูกทิ้งไว้ในน้ำ', powerOutage: 'ไฟฟ้าดับ/POS มีปัญหา', cashDiscrepancy: 'ตรวจนับเงินขาด', altercation: 'ทะเลาะวิวาทกับลูกค้า/เพื่อนร่วมงาน', reviewScore: 'คะแนนรีวิว 3/2/1 ดาว', otherIncident: 'อื่นๆ',
-        photoTooLarge: 'ไฟล์รูปใหญ่เกินไป (สูงสุด 2MB)', maxPhotosExceeded: 'แนบรูปได้สูงสุด {n} รูป', photoSizeHint: 'สูงสุด 5 รูป, ไม่เกิน 2MB ต่อรูป (บีบอัดอัตโนมัติ)', profilePhotoHint: 'สูงสุด 2MB (บีบอัดอัตโนมัติ)'
+        photoTooLarge: 'ไฟล์รูปใหญ่เกินไป (สูงสุด 2MB)', maxPhotosExceeded: 'แนบรูปได้สูงสุด {n} รูป', photoSizeHint: 'สูงสุด 5 รูป, ไม่เกิน 2MB ต่อรูป (บีบอัดอัตโนมัติ)', profilePhotoHint: 'สูงสุด 2MB (บีบอัดอัตโนมัติ)',
+        unapprove: 'ยกเลิกอนุมัติ', confirmUnapprove: 'ต้องการยกเลิกอนุมัติใบลานี้หรือไม่? ใบลาจะถูกส่งให้ MD พิจารณาอีกครั้ง', leaveUnapproved: 'ยกเลิกอนุมัติแล้ว — รอ MD พิจารณา', pendingMD: 'รอ MD พิจารณา', reApprove: 'อนุมัติอีกครั้ง', awaitingMD: 'รอ MD พิจารณา', unapprovedByLabel: 'ยกเลิกโดย', onlyMDApproveUnapproved: 'เฉพาะ MD เท่านั้นที่อนุมัติกรณียกเลิกอนุมัติได้'
       },
       en: {
         loginTitle: 'HR Management Portal', loginUsername: 'Username', loginPassword: 'Password', loginBtn: 'Login', noAccount: 'No account yet?', signupLink: 'Sign up', demoTitle: 'Demo Accounts:', demoMD: 'MD', demoHR: 'HR', demoDeptHead: 'Dept Head', demoEmployee: 'Employee', demoAdmin: 'Admin',
@@ -524,7 +529,8 @@
         birthday: 'Birthday', address: 'Address', nationality: 'Nationality', email: 'Email', nickname: 'Nickname', requestLeave: 'Request Leave', from: 'From', to: 'To', search: 'Search', all: 'All', checkOut: 'Check-out', recalcSchedule: 'Recalc from Schedule', attendanceNote: 'Status is linked to Schedule Management and Approved OT. Shifts marked with * use default (Shift A weekdays). Set schedules and approve OT first, then click Recalc from Schedule.', records: 'records', allEmployeesReport: 'All Employees Report (Excel)', individualReport: 'Individual Report (Excel)', lateSummary: 'Late Summary (Excel)', offDayScanTitle: 'Scanned on Scheduled OFF Day — No Approved OT', offDayScanNote: 'The following employees scanned in on their scheduled OFF day. Please verify if OT was authorized.', leaveRequests: 'Leave Requests', otRequestsLabel: 'OT Requests', leaveRequestsPending: 'Leave Requests Pending', otRequestsPending: 'OT Requests Pending', time: 'Time', unknown: 'Unknown', onlyHRMDApprove: 'Only HR/MD can approve requests', onlyHRMDReject: 'Only HR/MD can reject requests', adminNoApproval: 'Admin does not have approval access', adminNoSchedule: 'Admin does not have schedule management access', searchIdNameNickname: 'Search (ID / Name / Nickname)', fingerprint: 'Fingerprint', level: 'Level', empStartDate: 'Start Date', employeeId: 'Employee ID', fingerprintId: 'Fingerprint ID', username: 'Username', passwordField: 'Password', fullName: 'Full Name', section: 'Section', sectionPlaceholder: 'e.g. Bakery, Bar, Service', employeeDeleted: 'Employee deleted', employeeUpdated: 'Employee updated', addEmployee: 'Add Employee', deptHead: 'Dept Head', admin: 'Admin', hr: 'HR', md: 'MD', leaveReportCSV: 'Leave Report (Excel)', otReportCSV: 'OT Report (Excel)', attendanceReportCSV: 'Attendance Report (Excel)', weeklyScheduleCSV: 'Weekly Schedule (Excel)', activityLogCSV: 'Activity Log (Excel)', total: 'Total', retentionPolicy: 'Retention policy: minimum 30 days', timestamp: 'Timestamp', user: 'User', detail: 'Detail', searchContacts: 'Search by ID, name, nickname, department...', contactUpdated: 'Contact updated', contactAdded: 'Contact added', contactDeleted: 'Contact deleted', allSections: '-- All Sections --', allEmployeesOption: '-- All Employees --', clickToChangeShift: 'Click a cell to change shift', selectShift: 'Select Shift', overall: 'Overall', scheduleDownloaded: 'Schedule downloaded', noEmployeeSelected: 'No employee selected', downloadSchedule: 'Download Schedule', pleaseFillAll: 'Please fill all fields', endAfterStart: 'End date must be after start date', endTimeAfterStart: 'End time must be after start time', otSubmitted: 'OT request submitted', deletedMsg: 'Deleted', noLeaveData: 'No leave data in selected range', noOTData: 'No OT data in selected range', selectEmployeeFirst: 'Please select an employee first', noAttendanceData: 'No attendance data in selected range', nameUsernameRequired: 'Name and Username are required', newRequest: 'New Request', idSlashName: 'ID / Name', employees: 'employees', manageDepartments: 'Manage Departments', addDepartment: 'Add Department', editDepartment: 'Edit Department', deleteDepartment: 'Delete Department', deptName: 'Department Name', deptAdded: 'Department added', deptUpdated: 'Department updated', deptDeleted: 'Department deleted', deptInUse: 'Cannot delete — employees are assigned to this department', deptExists: 'Department already exists', enterDeptName: 'Please enter department name', lineId: 'LINE ID', createAccount: 'Create Account', backToLogin: 'Back to Login', pleaseFillRequired: 'Please fill required fields', empIdExists: 'Employee ID already exists', accountCreated: 'Account created', readingFile: 'Reading file', errorReadingFile: 'Error reading file', loadingExcelParser: 'Loading Excel parser...', excelParserLoaded: 'Excel parser loaded, processing...', excelParserError: 'Could not load Excel parser. Please check internet connection.', errorParsingFile: 'Error parsing file', histSickLeave: 'Historical Sick Leave (Pre-system)', histPersonalLeave: 'Historical Personal Leave (Pre-system)', histAnnualLeave: 'Historical Annual Leave (Pre-system)', historicalLeave: 'Historical Leave Data', quotaExceeded: 'Leave quota exceeded', resetPassword: 'Reset Password', confirmResetPassword: 'Reset password for {name}? Password will be set to "reset123" and the employee must create a new password on next login.', passwordResetDone: 'Password reset successful (temporary: reset123)', mustChangePasswordMsg: 'Your password has been reset. Please create a new password.', newPassword: 'New Password', confirmPassword: 'Confirm Password', changePassword: 'Change Password', passwordTooShort: 'Password must be at least 4 characters', passwordMismatch: 'Passwords do not match', passwordCannotBeDefault: 'Cannot use the temporary password as your new password', passwordChanged: 'Password changed successfully', accessDenied: 'Access denied', cannotApproveOwn: 'Cannot approve your own request', cannotApproveDiffDept: 'Cannot approve requests from other departments',
         addHoliday: 'Add Holiday', editHoliday: 'Edit Holiday', holidayName: 'Holiday Name', holidayAdded: 'Holiday added', holidayUpdated: 'Holiday updated', holidayDeleted: 'Holiday deleted', holidayExists: 'Holiday already exists on this date',
         disciplinary: 'Disciplinary', reportDisciplinary: 'Report Disciplinary', disciplinaryApprovals: 'Disciplinary Approvals', disciplinaryRecords: 'Disciplinary Records', manageDisciplinary: 'Manage Disciplinary', incidentType: 'Incident Type', severityCode: 'Severity Code', offenseTrack: 'Offense Track', minorOffense: 'Minor Offense', seriousOffense: 'Serious Offense', verbalWarning: 'Verbal Warning', writtenWarning: 'Written Warning', payCutDemotion: 'Pay Cut / Demotion', suspension: 'Suspension', termination: 'Termination', disciplinaryStep: 'Disciplinary Step', selectEmployee: 'Select Employee', incidentDate: 'Incident Date', incidentDescription: 'Incident Description', submitDisciplinary: 'Submit Report', disciplinarySubmitted: 'Disciplinary report submitted', disciplinaryApproved: 'Disciplinary action approved', disciplinaryRejected: 'Disciplinary action rejected', resetDisciplinary: 'Reset Disciplinary', confirmResetDisciplinary: 'Reset disciplinary record for {name}?', disciplinaryReset: 'Disciplinary record reset', noDisciplinaryData: 'No disciplinary records', activeWarnings: 'Active Warnings', expired: 'Expired', warningExpiry: 'Warnings expire after 1 year', code55: 'Normal (55)', code91: 'Damage-No Revenue Loss (91)', code92: 'Risk of Revenue Loss (92)', code93: 'Revenue Loss/Asset Risk (93)', code94: 'Reputation/Fraud/Criminal (94)', reportedBy: 'Reported By', approvedBy: 'Approved By', offenseCount: 'Offense #', selectIncident: 'Select Incident', foodDrinkDirty: 'Food/drink dirty or unusual smell', foreignObject: 'Foreign object in food', foodMismatch: 'Food taste/appearance mismatch', serviceDelay: 'Service delay exceeding limit', customerInjury: 'Customer injury', equipmentFailure: 'Surf equipment failure during lesson', studentUnattended: 'Student left unattended in water', powerOutage: 'Power outage / POS failure', cashDiscrepancy: 'Cash counting discrepancy', altercation: 'Customer/colleague altercation', reviewScore: 'Review score: 3/2/1 star', otherIncident: 'Other',
-        photoTooLarge: 'File too large (max 2MB)', maxPhotosExceeded: 'Maximum {n} photos allowed', photoSizeHint: 'Max 5 photos, up to 2MB each (auto-compressed)', profilePhotoHint: 'Max 2MB (auto-compressed)'
+        photoTooLarge: 'File too large (max 2MB)', maxPhotosExceeded: 'Maximum {n} photos allowed', photoSizeHint: 'Max 5 photos, up to 2MB each (auto-compressed)', profilePhotoHint: 'Max 2MB (auto-compressed)',
+        unapprove: 'Unapprove', confirmUnapprove: 'Unapprove this leave? It will be sent to MD for review.', leaveUnapproved: 'Leave unapproved — pending MD review', pendingMD: 'Pending MD Review', reApprove: 'Re-approve', awaitingMD: 'Awaiting MD review', unapprovedByLabel: 'Unapproved by', onlyMDApproveUnapproved: 'Only MD can approve unapproved leave cases'
       },
       my: {
         loginTitle: 'ဝန်ထမ်းရေးရာ စီမံခန့်ခွဲမှု', loginUsername: 'အသုံးပြုသူအမည်', loginPassword: 'စကားဝှက်', loginBtn: 'ဝင်ရောက်ရန်', noAccount: 'အကောင့်မရှိသေးဘူးလား?', signupLink: 'အကောင့်ဖွင့်ရန်', demoTitle: 'စမ်းသပ်အကောင့်များ:', demoMD: 'MD', demoHR: 'HR', demoDeptHead: 'ဌာနမှူး', demoEmployee: 'ဝန်ထမ်း', demoAdmin: 'အက်ဒ်မင်',
@@ -534,7 +540,8 @@
         birthday: 'မွေးနေ့', address: 'လိပ်စာ', nationality: 'နိုင်ငံသား', email: 'အီးမေးလ်', nickname: 'အမည်ပြော', requestLeave: 'ခွင့်တောင်းရန်', from: 'မှ', to: 'သို့', search: 'ရှာဖွေရန်', all: 'အားလုံး', checkOut: 'ထွက်ခွာ', recalcSchedule: 'အချိန်ဇယားမှပြန်တွက်ရန်', attendanceNote: 'အခြေအနေသည် အချိန်ဇယားစီမံခန့်ခွဲမှုနှင့် အတည်ပြုထားသော OT နှင့်ချိတ်ဆက်ထားသည်။ * အမှတ်အသားပါ အလှည့်များသည် ပုံမှန် (အလှည့် A ရက်သတ္တပတ်ရက်များ) ကိုအသုံးပြုသည်။ အချိန်ဇယားသတ်မှတ်ပြီး OT အတည်ပြုပြီးမှ ပြန်တွက်ရန် နှိပ်ပါ။', records: 'မှတ်တမ်း', allEmployeesReport: 'ဝန်ထမ်းအားလုံး အစီရင်ခံစာ (Excel)', individualReport: 'တစ်ဦးချင်း အစီရင်ခံစာ (Excel)', lateSummary: 'နှောင့်နှေးမှုအနှစ်ချုပ် (Excel)', offDayScanTitle: 'သတ်မှတ်ထားသော အားလပ်ရက်တွင် စကင်ဖတ်ထားသည် — အတည်ပြုထားသော OT မရှိ', offDayScanNote: 'အောက်ပါဝန်ထမ်းများသည် ၎င်းတို့၏သတ်မှတ်ထားသော အားလပ်ရက်တွင် စကင်ဖတ်ဝင်ရောက်ခဲ့ကြသည်။ OT ခွင့်ပြုထားခြင်းရှိ/မရှိ စစ်ဆေးပါ။', leaveRequests: 'ခွင့်တောင်းခံမှုများ', otRequestsLabel: 'အချိန်ပိုတောင်းခံမှုများ', leaveRequestsPending: 'ဆိုင်းငံ့ခွင့်တောင်းခံမှုများ', otRequestsPending: 'ဆိုင်းငံ့အချိန်ပိုတောင်းခံမှုများ', time: 'အချိန်', unknown: 'မသိ', onlyHRMDApprove: 'HR/MD သာ အတည်ပြုနိုင်သည်', onlyHRMDReject: 'HR/MD သာ ငြင်းပယ်နိုင်သည်', adminNoApproval: 'အက်ဒ်မင်တွင် အတည်ပြုခွင့်မရှိပါ', adminNoSchedule: 'အက်ဒ်မင်တွင် အချိန်ဇယား စီမံခွင့်မရှိပါ', searchIdNameNickname: 'ရှာဖွေရန် (ID / အမည် / အမည်ပြော)', fingerprint: 'လက်ဗွေ', level: 'အဆင့်', empStartDate: 'စတင်ရက်', employeeId: 'ဝန်ထမ်းအမှတ်', fingerprintId: 'လက်ဗွေအမှတ်', username: 'အသုံးပြုသူအမည်', passwordField: 'စကားဝှက်', fullName: 'အမည်အပြည့်အစုံ', section: 'ကဏ္ဍ', sectionPlaceholder: 'ဥပမာ Bakery, Bar, Service', employeeDeleted: 'ဝန်ထမ်းကိုဖျက်ပြီး', employeeUpdated: 'ဝန်ထမ်းအချက်အလက်အပ်ဒိတ်လုပ်ပြီး', addEmployee: 'ဝန်ထမ်းထည့်ရန်', deptHead: 'ဌာနမှူး', admin: 'အက်ဒ်မင်', hr: 'HR', md: 'MD', leaveReportCSV: 'ခွင့်အစီရင်ခံစာ (Excel)', otReportCSV: 'အချိန်ပို အစီရင်ခံစာ (Excel)', attendanceReportCSV: 'တက်ရောက်မှု အစီရင်ခံစာ (Excel)', weeklyScheduleCSV: 'အပတ်စဉ် အချိန်ဇယား (Excel)', activityLogCSV: 'လုပ်ဆောင်ချက်မှတ်တမ်း (Excel)', total: 'စုစုပေါင်း', retentionPolicy: 'ဒေတာသိမ်းဆည်းမှုမူဝါဒ: အနည်းဆုံး ရက် ၃၀', timestamp: 'အချိန်တံဆိပ်', user: 'အသုံးပြုသူ', detail: 'အသေးစိတ်', searchContacts: 'ID, အမည်, အမည်ပြော, ဌာန ဖြင့်ရှာဖွေရန်...', contactUpdated: 'အဆက်အသွယ်အပ်ဒိတ်လုပ်ပြီး', contactAdded: 'အဆက်အသွယ်ထည့်ပြီး', contactDeleted: 'အဆက်အသွယ်ဖျက်ပြီး', allSections: '-- ကဏ္ဍအားလုံး --', allEmployeesOption: '-- ဝန်ထမ်းအားလုံး --', clickToChangeShift: 'အလှည့်ပြောင်းရန် ကွက်တစ်ခုကို နှိပ်ပါ', selectShift: 'အလှည့်ရွေးရန်', overall: 'အလုံးစုံ', scheduleDownloaded: 'အချိန်ဇယားဒေါင်းလုဒ်လုပ်ပြီး', noEmployeeSelected: 'ဝန်ထမ်းမရွေးရသေးပါ', downloadSchedule: 'အချိန်ဇယားဒေါင်းလုဒ်', pleaseFillAll: 'အကွက်အားလုံးဖြည့်ပါ', endAfterStart: 'ပြီးဆုံးရက်သည် စတင်ရက်နောက်ဖြစ်ရမည်', endTimeAfterStart: 'ပြီးဆုံးချိန်သည် စတင်ချိန်နောက်ဖြစ်ရမည်', otSubmitted: 'အချိန်ပိုတောင်းခံမှုတင်ပြပြီး', deletedMsg: 'ဖျက်ပြီး', noLeaveData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် ခွင့်ဒေတာမရှိ', noOTData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် OT ဒေတာမရှိ', selectEmployeeFirst: 'ဝန်ထမ်းကို အရင်ရွေးပါ', noAttendanceData: 'ရွေးချယ်ထားသောအပိုင်းအခြားတွင် တက်ရောက်မှုဒေတာမရှိ', nameUsernameRequired: 'အမည်နှင့်အသုံးပြုသူအမည် လိုအပ်သည်', newRequest: 'တောင်းဆိုချက်အသစ်', idSlashName: 'ID / အမည်', employees: 'ဝန်ထမ်း', manageDepartments: 'ဌာနများစီမံရန်', addDepartment: 'ဌာနထည့်ရန်', editDepartment: 'ဌာနပြင်ဆင်ရန်', deleteDepartment: 'ဌာနဖျက်ရန်', deptName: 'ဌာနအမည်', deptAdded: 'ဌာနထည့်ပြီး', deptUpdated: 'ဌာနအပ်ဒိတ်လုပ်ပြီး', deptDeleted: 'ဌာနဖျက်ပြီး', deptInUse: 'ဖျက်၍မရပါ — ဝန်ထမ်းများ ဤဌာနတွင်ရှိနေသည်', deptExists: 'ဌာနရှိပြီးသားဖြစ်သည်', enterDeptName: 'ဌာနအမည်ထည့်ပါ', lineId: 'LINE ID', createAccount: 'အကောင့်ဖွင့်ရန်', backToLogin: 'ဝင်ရောက်ရန်သို့ပြန်သွားရန်', pleaseFillRequired: 'လိုအပ်သောအကွက်များဖြည့်ပါ', empIdExists: 'ဝန်ထမ်းအမှတ် ရှိပြီးသားဖြစ်သည်', accountCreated: 'အကောင့်ဖွင့်ပြီးပါပြီ', readingFile: 'ဖိုင်ဖတ်နေသည်', errorReadingFile: 'ဖိုင်ဖတ်ရာတွင် အမှားရှိသည်', loadingExcelParser: 'Excel parser ကိုဖွင့်နေသည်...', excelParserLoaded: 'Excel parser ဖွင့်ပြီး ပြုလုပ်နေသည်...', excelParserError: 'Excel parser ကိုဖွင့်၍မရပါ။ အင်တာနက်ချိတ်ဆက်မှုကို စစ်ဆေးပါ။', errorParsingFile: 'ဖိုင်ခွဲခြမ်းရာတွင် အမှားရှိသည်', histSickLeave: 'ရောဂါခွင့် စုစုပေါင်း (စနစ်မသုံးခင်)', histPersonalLeave: 'ကိုယ်ရေးခွင့် စုစုပေါင်း (စနစ်မသုံးခင်)', histAnnualLeave: 'နှစ်ပတ်လည်ခွင့် စုစုပေါင်း (စနစ်မသုံးခင်)', historicalLeave: 'ယခင်ခွင့်မှတ်တမ်း', quotaExceeded: 'ခွင့်ခွဲတမ်းကျော်လွန်နေသည်', resetPassword: 'စကားဝှက်ပြန်သတ်မှတ်ရန်', confirmResetPassword: '{name} ၏စကားဝှက်ကို ပြန်သတ်မှတ်မလား? စကားဝှက်ကို "reset123" သို့ပြောင်းပြီး ဝန်ထမ်းသည် နောက်တစ်ကြိမ်ဝင်ရောက်သောအခါ စကားဝှက်အသစ်သတ်မှတ်ရမည်။', passwordResetDone: 'စကားဝှက်ပြန်သတ်မှတ်ပြီး (ယာယီ: reset123)', mustChangePasswordMsg: 'သင့်စကားဝှက်ကို ပြန်သတ်မှတ်ထားသည်။ စကားဝှက်အသစ်သတ်မှတ်ပါ။', newPassword: 'စကားဝှက်အသစ်', confirmPassword: 'စကားဝှက်အတည်ပြုရန်', changePassword: 'စကားဝှက်ပြောင်းရန်', passwordTooShort: 'စကားဝှက်သည် အနည်းဆုံး ၄ လုံးရှိရမည်', passwordMismatch: 'စကားဝှက်များ မတူညီပါ', passwordCannotBeDefault: 'ယာယီစကားဝှက်ကို စကားဝှက်အသစ်အဖြစ် သုံး၍မရပါ', passwordChanged: 'စကားဝှက်ပြောင်းပြီးပါပြီ', accessDenied: 'ဤစာမျက်နှာကို ဝင်ရောက်ခွင့်မရှိပါ', cannotApproveOwn: 'မိမိကိုယ်တိုင်၏တောင်းဆိုချက်ကို အတည်ပြု၍မရပါ', cannotApproveDiffDept: 'အခြားဌာန၏တောင်းဆိုချက်ကို အတည်ပြု၍မရပါ',
         addHoliday: 'အားလပ်ရက်ထည့်ရန်', editHoliday: 'အားလပ်ရက်ပြင်ရန်', holidayName: 'အားလပ်ရက်အမည်', holidayAdded: 'အားလပ်ရက်ထည့်ပြီး', holidayUpdated: 'အားလပ်ရက်အပ်ဒိတ်ပြီး', holidayDeleted: 'အားလပ်ရက်ဖျက်ပြီး', holidayExists: 'ဤရက်တွင်အားလပ်ရက်ရှိပြီးသား',
         disciplinary: 'စည်းကမ်းအရေးယူမှု', reportDisciplinary: 'စည်းကမ်းအရေးယူမှု တင်ပြရန်', disciplinaryApprovals: 'စည်းကမ်းအရေးယူမှု အတည်ပြုရန်', disciplinaryRecords: 'စည်းကမ်းမှတ်တမ်း', manageDisciplinary: 'စည်းကမ်းအရေးယူမှု စီမံရန်', incidentType: 'ဖြစ်ရပ်အမျိုးအစား', severityCode: 'ပြင်းထန်မှုကုဒ်', offenseTrack: 'ပြစ်မှုအမျိုးအစား', minorOffense: 'အပြစ်ပေါ့', seriousOffense: 'အပြစ်ကြီး', verbalWarning: 'နှုတ်ဖြင့်သတိပေးခြင်း', writtenWarning: 'စာဖြင့်သတိပေးခြင်း', payCutDemotion: 'လစာဖြတ်/ရာထူးလျှော့', suspension: 'ရပ်နားခြင်း', termination: 'ထုတ်ပယ်ခြင်း', disciplinaryStep: 'အရေးယူမှုအဆင့်', selectEmployee: 'ဝန်ထမ်းရွေးရန်', incidentDate: 'ဖြစ်ရပ်ရက်စွဲ', incidentDescription: 'ဖြစ်ရပ်အသေးစိတ်', submitDisciplinary: 'အစီရင်ခံစာတင်ရန်', disciplinarySubmitted: 'စည်းကမ်းအရေးယူမှုတင်ပြပြီး', disciplinaryApproved: 'စည်းကမ်းအရေးယူမှုအတည်ပြုပြီး', disciplinaryRejected: 'စည်းကမ်းအရေးယူမှုငြင်းပယ်ပြီး', resetDisciplinary: 'စည်းကမ်းမှတ်တမ်းရှင်းရန်', confirmResetDisciplinary: '{name} ၏စည်းကမ်းမှတ်တမ်းကိုရှင်းမလား?', disciplinaryReset: 'စည်းကမ်းမှတ်တမ်းရှင်းပြီး', noDisciplinaryData: 'စည်းကမ်းမှတ်တမ်းမရှိ', activeWarnings: 'အာဏာသက်ရောက်သော သတိပေးချက်များ', expired: 'သက်တမ်းကုန်', warningExpiry: 'သတိပေးစာ ၁ နှစ်အတွင်းသက်တမ်းကုန်', code55: 'ပုံမှန် (55)', code91: 'ပျက်စီး-ဝင်ငွေမဆုံးရှုံး (91)', code92: 'ဝင်ငွေဆုံးရှုံးနိုင် (92)', code93: 'ဝင်ငွေ/ပိုင်ဆိုင်မှုဆုံးရှုံး (93)', code94: 'ဂုဏ်သိက္ခာ/လိမ်လည်မှု (94)', reportedBy: 'တင်ပြသူ', approvedBy: 'အတည်ပြုသူ', offenseCount: 'အကြိမ်', selectIncident: 'ဖြစ်ရပ်ရွေးရန်', foodDrinkDirty: 'အစားအစာ/အဖျော်ယမကာ ညစ်ပတ်/အနံ့ဆိုး', foreignObject: 'အစားအစာထဲတွင် အပိုအရာ', foodMismatch: 'အရသာ/ပုံပန်း ကြော်ငြာနှင့်မတူ', serviceDelay: 'ဝန်ဆောင်မှုနှောင့်နှေး', customerInjury: 'ဖောက်သည်ဒဏ်ရာရ', equipmentFailure: 'ဆာဖ်ပစ္စည်းပျက်စီး', studentUnattended: 'ကျောင်းသားကိုရေထဲထားခဲ့', powerOutage: 'ဓာတ်အားပြတ်/POS ပျက်', cashDiscrepancy: 'ငွေရေတွက်မှုလွဲ', altercation: 'ဖောက်သည်/လုပ်ဖော်ကိုင်ဖက်နှင့် အငြင်းပွားမှု', reviewScore: 'ဆန်းစစ်အမှတ် 3/2/1 ကြယ်', otherIncident: 'အခြား',
-        photoTooLarge: 'ဖိုင်ကြီးလွန်းသည် (အများဆုံး 2MB)', maxPhotosExceeded: 'ဓာတ်ပုံ {n} ပုံသာတင်နိုင်သည်', photoSizeHint: 'အများဆုံး ၅ ပုံ, တစ်ပုံလျှင် 2MB (အလိုအလျောက်ချုံ့ပေးသည်)', profilePhotoHint: 'အများဆုံး 2MB (အလိုအလျောက်ချုံ့ပေးသည်)'
+        photoTooLarge: 'ဖိုင်ကြီးလွန်းသည် (အများဆုံး 2MB)', maxPhotosExceeded: 'ဓာတ်ပုံ {n} ပုံသာတင်နိုင်သည်', photoSizeHint: 'အများဆုံး ၅ ပုံ, တစ်ပုံလျှင် 2MB (အလိုအလျောက်ချုံ့ပေးသည်)', profilePhotoHint: 'အများဆုံး 2MB (အလိုအလျောက်ချုံ့ပေးသည်)',
+        unapprove: 'ခွင့်ပြုချက်ပြန်ရုပ်သိမ်း', confirmUnapprove: 'ဤခွင့်ကိုပြန်ရုပ်သိမ်းမလား? MD သို့ပြန်ပို့ပါမည်', leaveUnapproved: 'ခွင့်ပြုချက်ရုပ်သိမ်းပြီး — MD စိစစ်ရန်စောင့်ဆိုင်း', pendingMD: 'MD စိစစ်ရန်စောင့်ဆိုင်း', reApprove: 'ပြန်ခွင့်ပြုရန်', awaitingMD: 'MD စိစစ်ရန်စောင့်ဆိုင်း', unapprovedByLabel: 'ရုပ်သိမ်းသူ', onlyMDApproveUnapproved: 'MD သာလျှင်ခွင့်ပြုချက်ရုပ်သိမ်းမှုကိုအတည်ပြုနိုင်သည်'
       }
     };
 
@@ -550,6 +557,8 @@
           APP.currentUser = emp;
           _authenticatedUser = emp;
           _authenticatedRole = emp.role;
+          // Save session for page refresh persistence
+          try { sessionStorage.setItem('saltsurf_session', JSON.stringify({ userId: emp.id, page: 'dashboard' })); } catch(e) {}
           document.getElementById('loginPage').style.display = 'none';
           document.getElementById('signupPage').style.display = 'none';
           document.getElementById('mainApp').style.display = 'flex';
@@ -569,10 +578,38 @@
       APP.currentUser = null;
       _authenticatedUser = null;
       _authenticatedRole = null;
+      try { sessionStorage.removeItem('saltsurf_session'); } catch(e) {}
       document.getElementById('mainApp').style.display = 'none';
       document.getElementById('loginPage').style.display = 'block';
       document.getElementById('username').value = '';
       document.getElementById('password').value = '';
+    }
+
+    // Restore session after page refresh
+    function restoreSession() {
+      try {
+        var raw = sessionStorage.getItem('saltsurf_session');
+        if (!raw) return false;
+        var session = JSON.parse(raw);
+        var emp = APP.employees.find(function(e) { return e.id === session.userId; });
+        if (!emp) return false;
+        APP.currentUser = emp;
+        _authenticatedUser = emp;
+        _authenticatedRole = emp.role;
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('signupPage').style.display = 'none';
+        document.getElementById('mainApp').style.display = 'flex';
+        document.querySelector('.user-name').textContent = emp.name;
+        document.querySelector('.user-role').textContent = (emp.empId || '') + ' | ' + emp.role;
+        updateSidebarAvatar(emp);
+        renderNavigation();
+        navigateTo(session.page || 'dashboard');
+        if (emp.mustChangePassword) { setTimeout(showForceChangePassword, 500); }
+        return true;
+      } catch(e) {
+        console.warn('Session restore failed:', e);
+        return false;
+      }
     }
 
     function goToLogin() {
@@ -772,6 +809,12 @@
       }
 
       currentPage = page;
+      // Save current page to session for refresh persistence
+      try {
+        var s = JSON.parse(sessionStorage.getItem('saltsurf_session') || '{}');
+        s.page = page;
+        sessionStorage.setItem('saltsurf_session', JSON.stringify(s));
+      } catch(e) {}
       let headerText = t(page) || page;
       document.querySelector('.header-left h2').textContent = headerText;
       const content = document.getElementById('content');
@@ -921,7 +964,9 @@
             <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('reason')}</th><th>${t('status')}</th></tr>
             ${APP.leaves.filter(l => l.empId === user.id).slice().reverse().map(l => {
               var dateCol = l.mode === 'hourly' ? l.from + '<br><small style="color:#666;">' + (l.startTime||'') + ' - ' + (l.endTime||'') + '</small>' : (l.to && l.to !== l.from ? l.from + ' ~ ' + l.to : l.from);
-              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + (l.durationText || '-') + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + l.status + '">' + T[APP.lang][l.status] + '</span></td></tr>';
+              var sKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
+              var sClass = l.status === 'pending_md' ? 'pending' : l.status;
+              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + (l.durationText || '-') + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
             }).join('')}
           </table>
           </div>
@@ -1725,9 +1770,17 @@
         const emp = APP.employees.find(e => e.id === leave.empId);
         const photoCount = leave.photos ? leave.photos.length : 0;
         const photoBtn = photoCount > 0 ? '<button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + leave.id + '\')">\u{1F4F7} ' + photoCount + ' ' + t('viewPhotos') + '</button>' : '<span style="color:#999;">-</span>';
-        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${leave.durationText || '-'}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${leave.status}">${T[APP.lang][leave.status]}</span></td><td>`;
+        var statusKey = leave.status === 'pending_md' ? 'pendingMD' : leave.status;
+        var statusClass = leave.status === 'pending_md' ? 'pending' : leave.status;
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${leave.durationText || '-'}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
         if (leave.status === 'pending') {
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
+        } else if (leave.status === 'approved' && verifyRole() === 'hr') {
+          html += `<button class="btn btn-small" style="background:#E53E3E;color:white;" onclick="unapproveLeave('${leave.id}')">${t('unapprove')}</button>`;
+        } else if (leave.status === 'pending_md' && verifyRole() === 'md') {
+          html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('reApprove')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
+        } else if (leave.status === 'pending_md') {
+          html += `<small style="color:#DD6B20;">${t('awaitingMD')}</small>`;
         }
         html += `</td></tr>`;
       });
@@ -1760,7 +1813,13 @@
       const leave = APP.leaves.find(l => l.id === id);
       if (!leave) return;
       if (leave.empId === APP.currentUser.id) { showToast(t('cannotApproveOwn'), 'error'); return; }
+      // MD re-approving after HR unapproved
+      if (leave.status === 'pending_md' && verifyRole() !== 'md') {
+        showToast(t('onlyMDApproveUnapproved'), 'error');
+        return;
+      }
       leave.status = 'approved';
+      leave.approvedBy = APP.currentUser.name;
       addLog('approval', `Leave request ${id} approved by ${verifyRole().toUpperCase()}`);
       showToast(t('approved'), 'success');
       renderAllLeaveRequests();
@@ -1772,8 +1831,23 @@
       if (!leave) return;
       if (leave.empId === APP.currentUser.id) { showToast(t('cannotApproveOwn'), 'error'); return; }
       leave.status = 'rejected';
+      leave.rejectedBy = APP.currentUser.name;
       addLog('rejection', `Leave request ${id} rejected by ${verifyRole().toUpperCase()}`);
       showToast(t('rejected'), 'success');
+      renderAllLeaveRequests();
+    }
+
+    function unapproveLeave(id) {
+      var role = verifyRole();
+      if (role !== 'hr') { showToast(t('accessDenied'), 'error'); return; }
+      var leave = APP.leaves.find(function(l) { return l.id === id; });
+      if (!leave || leave.status !== 'approved') return;
+      if (!confirm(t('confirmUnapprove'))) return;
+      leave.status = 'pending_md';
+      leave.unapprovedBy = APP.currentUser.name;
+      leave.unapprovedAt = new Date().toISOString();
+      addLog('unapproval', 'Leave request ' + id + ' unapproved by HR (' + APP.currentUser.name + '), pending MD review');
+      showToast(t('leaveUnapproved'), 'success');
       renderAllLeaveRequests();
     }
 
@@ -2750,7 +2824,7 @@
       var personalCount = filteredLeaves.filter(function(l) { return l.type === 'personalLeave'; }).length;
       var annualCount = filteredLeaves.filter(function(l) { return l.type === 'annualLeave'; }).length;
       var approvedCount = filteredLeaves.filter(function(l) { return l.status === 'approved'; }).length;
-      var pendingCount = filteredLeaves.filter(function(l) { return l.status === 'pending'; }).length;
+      var pendingCount = filteredLeaves.filter(function(l) { return l.status === 'pending' || l.status === 'pending_md'; }).length;
       var rejectedCount = filteredLeaves.filter(function(l) { return l.status === 'rejected'; }).length;
 
       // OT summary
