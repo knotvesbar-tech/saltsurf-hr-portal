@@ -233,7 +233,7 @@
   <!-- MAIN APP -->
   <div id="mainApp" style="display:none" class="app-container">
     <div class="sidebar">
-      <div class="sidebar-logo"><img src="horizontal logo/SS_Clear Sticker_Horizon Logo.png" alt="Salt Surf" style="width:180px; height:auto; filter:invert(1); opacity:0.92; mix-blend-mode:screen;"></div>
+      <div class="sidebar-logo"><img src="logo_sidebar_white.png" alt="Salt Surf" style="width:180px; height:auto; opacity:0.95;"></div>
       <div class="user-section">
         <div class="user-avatar">N</div>
         <div class="user-name">Name</div>
@@ -567,6 +567,14 @@
       return leave.duration + ' ' + t('days');
     }
 
+    function getLeaveTypeLabel(leave) {
+      var label = t(leave.type);
+      if (leave.type === 'holidayLeave' && leave.holidayName) {
+        label += ' - ' + leave.holidayName;
+      }
+      return label;
+    }
+
     function doLogin() {
       try {
         var u = document.getElementById('username').value.trim();
@@ -661,6 +669,12 @@
     function goToSignup() {
       document.getElementById('signupPage').style.display = 'block';
       document.getElementById('loginPage').style.display = 'none';
+      ['signupEmpId','signupName','signupUsername','signupPassword','signupPhone','signupEmail','signupSection','signupPos','signupAddress','signupLineId','signupBirthday'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      ['signupDept','signupNationality'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.selectedIndex = 0;
+      });
       renderSignupPage();
     }
 
@@ -1027,7 +1041,7 @@
               var dateCol = l.mode === 'hourly' ? l.from + '<br><small style="color:#666;">' + (l.startTime||'') + ' - ' + (l.endTime||'') + '</small>' : (l.to && l.to !== l.from ? l.from + ' ~ ' + l.to : l.from);
               var sKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
               var sClass = l.status === 'pending_md' ? 'pending' : l.status;
-              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + getLeaveDurationText(l) + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
+              return '<tr><td>' + dateCol + '</td><td>' + getLeaveTypeLabel(l) + '</td><td>' + getLeaveDurationText(l) + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
             }).join('')}
           </table>
           </div>
@@ -1098,14 +1112,29 @@
         }
         return '<td>' + l.from + '</td>';
       };
+      var myLeaves = APP.leaves.filter(function(l) { return l.empId === APP.currentUser.id; });
+      var tableRows = '';
+      myLeaves.forEach(function(l) {
+        var statusKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
+        var statusClass = l.status === 'pending_md' ? 'pending' : l.status;
+        var actions = '-';
+        if (l.status === 'pending') {
+          actions = '<button class="btn btn-secondary btn-small" onclick="openEditLeaveModal(\'' + l.id + '\')">' + t('edit') + '</button> '
+                  + '<button class="btn btn-reject btn-small" onclick="cancelLeaveRequest(\'' + l.id + '\')">' + t('cancel') + '</button>';
+        }
+        tableRows += '<tr>' + leaveDateCol(l) + '<td>' + getLeaveTypeLabel(l) + '</td><td>' + getLeaveDurationText(l) + '</td>' + photoCol(l)
+                  + '<td><span class="badge badge-' + statusClass + '">' + (T[APP.lang][statusKey] || statusKey) + '</span></td>'
+                  + '<td>' + actions + '</td></tr>';
+      });
+      if (myLeaves.length === 0) tableRows = '<tr><td colspan="6" style="text-align:center;color:#999;padding:16px;">' + t('noData') + '</td></tr>';
       content.innerHTML = `
         <button class="btn btn-primary mb-20" onclick="openLeaveModal()">${t('newRequest')}</button>
         <div class="card">
           <h3>${t('leaveRequest')}</h3>
           <div style="overflow-x:auto;">
           <table>
-            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('photos')}</th><th>${t('status')}</th></tr>
-            ${APP.leaves.filter(l => l.empId === APP.currentUser.id).map(l => `<tr>${leaveDateCol(l)}<td>${t(l.type)}</td><td>${getLeaveDurationText(l)}</td>${photoCol(l)}<td><span class="badge badge-${l.status}">${T[APP.lang][l.status]}</span></td></tr>`).join('')}
+            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('photos')}</th><th>${t('status')}</th><th>${t('action')}</th></tr>
+            ${tableRows}
           </table>
           </div>
         </div>
@@ -1158,7 +1187,8 @@
       leavePhotosTemp = [];
       var today = new Date().toISOString().split('T')[0];
       const html = `
-        <div class="form-group"><label>${t('type')}</label><select id="leaveType"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType" onchange="toggleHolidayPicker()"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group" id="holidayPickerGroup" style="display:none;"><label>${t('holidayName')}</label><select id="leaveHolidayName" onchange="onHolidayPicked()"><option value="">-- ${t('holidayName')} --</option>${APP.holidays.map(function(h){return '<option value="'+h.date+'">'+h.date+' - '+h.name+'</option>';}).join('')}</select></div>
         <div class="form-group"><label>${t('leaveMode')}</label>
           <select id="leaveMode" onchange="toggleLeaveMode()">
             <option value="fullday">${t('fullDay')}</option>
@@ -1198,6 +1228,25 @@
       var mode = document.getElementById('leaveMode').value;
       document.getElementById('leaveDateFields').style.display = mode === 'fullday' ? 'block' : 'none';
       document.getElementById('leaveTimeFields').style.display = mode === 'hourly' ? 'block' : 'none';
+      calcLeaveDuration();
+    }
+
+    function toggleHolidayPicker() {
+      var typeEl = document.getElementById('leaveType');
+      var group = document.getElementById('holidayPickerGroup');
+      if (!typeEl || !group) return;
+      group.style.display = typeEl.value === 'holidayLeave' ? 'block' : 'none';
+    }
+
+    function onHolidayPicked() {
+      var hp = document.getElementById('leaveHolidayName');
+      if (!hp || !hp.value) return;
+      var modeEl = document.getElementById('leaveMode');
+      if (modeEl) { modeEl.value = 'fullday'; toggleLeaveMode(); }
+      var sd = document.getElementById('leaveStartDate');
+      var ed = document.getElementById('leaveEndDate');
+      if (sd) sd.value = hp.value;
+      if (ed) ed.value = hp.value;
       calcLeaveDuration();
     }
 
@@ -1288,6 +1337,13 @@
         leave.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
       }
       if (!leave.reason) { showToast(t('pleaseFillAll'), 'error'); return; }
+      if (leave.type === 'holidayLeave') {
+        var hp = document.getElementById('leaveHolidayName');
+        if (!hp || !hp.value) { showToast(t('pleaseFillAll'), 'error'); return; }
+        leave.holidayDate = hp.value;
+        var picked = APP.holidays.find(function(h) { return h.date === hp.value; });
+        leave.holidayName = picked ? picked.name : '';
+      }
       // Quota validation including historical data
       var quotas = { sickLeave: 30, personalLeave: 3, annualLeave: 7, holidayLeave: 15 };
       var user = APP.currentUser;
@@ -1308,6 +1364,136 @@
       showToast(t('leaveSubmitted'), 'success');
       closeModal();
       renderLeaveRequest();
+    }
+
+    function openEditLeaveModal(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      var role = APP.currentUser.role;
+      if (role !== 'hr' && role !== 'md') {
+        if (leave.empId !== APP.currentUser.id || leave.status !== 'pending') { showToast(t('accessDenied'), 'error'); return; }
+      }
+      leavePhotosTemp = leave.photos ? leave.photos.slice() : [];
+      var html = `
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType" onchange="toggleHolidayPicker()"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group" id="holidayPickerGroup" style="display:none;"><label>${t('holidayName')}</label><select id="leaveHolidayName" onchange="onHolidayPicked()"><option value="">-- ${t('holidayName')} --</option>${APP.holidays.map(function(h){return '<option value="'+h.date+'">'+h.date+' - '+h.name+'</option>';}).join('')}</select></div>
+        <div class="form-group"><label>${t('leaveMode')}</label>
+          <select id="leaveMode" onchange="toggleLeaveMode()">
+            <option value="fullday">${t('fullDay')}</option>
+            <option value="hourly">${t('hourly')}</option>
+          </select>
+        </div>
+        <div id="leaveDateFields">
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startDate')}</label><input type="date" id="leaveStartDate" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endDate')}</label><input type="date" id="leaveEndDate" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveTimeFields" style="display:none;">
+          <div class="form-group"><label>${t('date')}</label><input type="date" id="leaveHourlyDate"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startTime')}</label><input type="time" id="leaveStartTime" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endTime')}</label><input type="time" id="leaveEndTime" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveDurationDisplay" style="padding:10px; background:#F0F4F8; border-radius:6px; margin-bottom:15px; font-size:14px; color:#1A365D; font-weight:600;"></div>
+        <div class="form-group"><label>${t('reason')}</label><textarea id="leaveReason" rows="3"></textarea></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="saveEditLeave('${leaveId}')">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('edit') + ' - ' + t('leaveRequest'), html);
+      document.getElementById('leaveType').value = leave.type;
+      document.getElementById('leaveMode').value = leave.mode || 'fullday';
+      toggleLeaveMode();
+      toggleHolidayPicker();
+      if (leave.type === 'holidayLeave' && leave.holidayDate) {
+        var hpEl = document.getElementById('leaveHolidayName');
+        if (hpEl) hpEl.value = leave.holidayDate;
+      }
+      if ((leave.mode || 'fullday') === 'hourly') {
+        document.getElementById('leaveHourlyDate').value = leave.from || '';
+        document.getElementById('leaveStartTime').value = leave.startTime || '';
+        document.getElementById('leaveEndTime').value = leave.endTime || '';
+      } else {
+        document.getElementById('leaveStartDate').value = leave.from || '';
+        document.getElementById('leaveEndDate').value = leave.to || leave.from || '';
+      }
+      document.getElementById('leaveReason').value = leave.reason || '';
+      calcLeaveDuration();
+    }
+
+    function saveEditLeave(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      var mode = document.getElementById('leaveMode').value;
+      var updated = {
+        type: document.getElementById('leaveType').value,
+        mode: mode,
+        reason: sanitize(document.getElementById('leaveReason').value)
+      };
+      if (mode === 'fullday') {
+        updated.from = document.getElementById('leaveStartDate').value;
+        updated.to = document.getElementById('leaveEndDate').value;
+        if (!updated.from || !updated.to) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (updated.to < updated.from) { showToast(t('endAfterStart'), 'error'); return; }
+        var d1 = new Date(updated.from); var d2 = new Date(updated.to);
+        updated.duration = Math.round((d2 - d1) / 86400000) + 1;
+        updated.durationText = updated.duration + ' ' + t('days');
+        updated.startTime = null; updated.endTime = null;
+      } else {
+        updated.from = document.getElementById('leaveHourlyDate').value;
+        updated.to = updated.from;
+        updated.startTime = document.getElementById('leaveStartTime').value;
+        updated.endTime = document.getElementById('leaveEndTime').value;
+        if (!updated.from || !updated.startTime || !updated.endTime) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (updated.endTime <= updated.startTime) { showToast(t('endTimeAfterStart'), 'error'); return; }
+        var st = updated.startTime.split(':'); var et = updated.endTime.split(':');
+        var mins = (parseInt(et[0])*60 + parseInt(et[1])) - (parseInt(st[0])*60 + parseInt(st[1]));
+        var hrs = Math.floor(mins / 60); var rm = mins % 60;
+        updated.duration = mins / 60;
+        updated.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+      }
+      if (updated.type === 'holidayLeave') {
+        var hp = document.getElementById('leaveHolidayName');
+        if (!hp || !hp.value) { showToast(t('pleaseFillAll'), 'error'); return; }
+        updated.holidayDate = hp.value;
+        var picked = APP.holidays.find(function(h) { return h.date === hp.value; });
+        updated.holidayName = picked ? picked.name : '';
+      } else {
+        updated.holidayDate = null;
+        updated.holidayName = null;
+      }
+      Object.assign(leave, updated);
+      scheduleSave();
+      addLog('leave_edit', 'Leave ' + leaveId + ' edited by ' + APP.currentUser.username);
+      showToast(t('leaveSubmitted'), 'success');
+      closeModal();
+      if (APP.currentUser.role === 'hr' || APP.currentUser.role === 'md') { renderAllLeaveRequests(); } else { renderLeaveRequest(); }
+    }
+
+    function cancelLeaveRequest(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      if (leave.empId !== APP.currentUser.id || leave.status !== 'pending') { showToast(t('accessDenied'), 'error'); return; }
+      if (!confirm(t('confirmDelete'))) return;
+      APP.leaves = APP.leaves.filter(function(l) { return l.id !== leaveId; });
+      scheduleSave();
+      addLog('leave_cancel', 'Leave ' + leaveId + ' cancelled by ' + APP.currentUser.username);
+      showToast(t('deletedMsg'), 'success');
+      renderLeaveRequest();
+    }
+
+    function deleteLeaveHR(leaveId) {
+      var role = verifyRole();
+      if (role !== 'hr' && role !== 'md') { showToast(t('accessDenied'), 'error'); return; }
+      if (!confirm(t('confirmDelete'))) return;
+      APP.leaves = APP.leaves.filter(function(l) { return l.id !== leaveId; });
+      scheduleSave();
+      addLog('leave_delete', 'Leave ' + leaveId + ' deleted by ' + APP.currentUser.username);
+      showToast(t('deletedMsg'), 'success');
+      renderAllLeaveRequests();
     }
 
     function viewLeavePhotos(leaveId) {
@@ -1415,7 +1601,8 @@
       'A': { label: 'A (07:00-16:00)', time: '07:00-16:00', color: '#27AE60', bg: 'rgba(39,174,96,0.15)' },
       'B': { label: 'B (10:00-19:00)', time: '10:00-19:00', color: '#2980B9', bg: 'rgba(41,128,185,0.15)' },
       'C': { label: 'C (12:00-21:00)', time: '12:00-21:00', color: '#8E44AD', bg: 'rgba(142,68,173,0.15)' },
-      'OFF': { label: 'OFF', time: '', color: '#999', bg: '#f5f5f5' }
+      'OFF': { label: 'OFF', time: '', color: '#999', bg: '#f5f5f5' },
+      'PH': { label: 'PH', time: '', color: '#C05621', bg: 'rgba(192,86,33,0.12)' }
     };
 
     let scheduleWeekStart = new Date();
@@ -1481,18 +1668,23 @@
             var from = l.from, to = l.to || l.from;
             return dateStr >= from && dateStr <= to;
           });
-          var leaveBadge = leaveOnDate ? '<br><span style="font-size:10px; color:#E74C3C; font-weight:600;">\u{1F4CB} ' + t('onLeave') + '</span>' : '';
+          var leaveBadge = leaveOnDate ? '<br><span style="font-size:10px; color:#E74C3C; font-weight:600;">\u{1F4CB} ' + getLeaveTypeLabel(leaveOnDate) + '</span>' : '';
           // Check approved OT for this date
           var otOnDate = APP.ots.find(function(o) {
             return o.empId === emp.id && o.status === 'approved' && o.date === dateStr;
           });
           var otBadge = otOnDate ? '<br><span style="font-size:10px; color:#F39C12; font-weight:600;">\u23F0 OT ' + (otOnDate.startTime||'') + '-' + (otOnDate.endTime||'') + '</span>' : '';
+          var phBadge = '';
+          if (shiftKey === 'PH') {
+            var phHoliday = APP.holidays.find(function(h) { return h.date === dateStr; });
+            if (phHoliday) phBadge = '<br><span style="font-size:10px; color:#C05621; font-weight:500;">' + phHoliday.name + '</span>';
+          }
           var overlayBg = leaveOnDate ? 'rgba(231,76,60,0.12)' : display.bg;
           const canEdit = isHRorMD || (isDeptHead && emp.dept === APP.currentUser.dept);
           if (canEdit) {
-            tableHTML += `<td style="text-align:center; cursor:pointer; background:${overlayBg}; border:1px solid #eee;" onclick="editScheduleCell('${emp.id}', '${dateStr}')"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${leaveBadge}${otBadge}${pendingBadge}</td>`;
+            tableHTML += `<td style="text-align:center; cursor:pointer; background:${overlayBg}; border:1px solid #eee;" onclick="editScheduleCell('${emp.id}', '${dateStr}')"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${phBadge}${leaveBadge}${otBadge}${pendingBadge}</td>`;
           } else {
-            tableHTML += `<td style="text-align:center; background:${overlayBg};"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${leaveBadge}${otBadge}${pendingBadge}</td>`;
+            tableHTML += `<td style="text-align:center; background:${overlayBg};"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${phBadge}${leaveBadge}${otBadge}${pendingBadge}</td>`;
           }
         }
         tableHTML += '</tr>';
@@ -1833,7 +2025,7 @@
         const photoBtn = photoCount > 0 ? '<button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + leave.id + '\')">\u{1F4F7} ' + photoCount + ' ' + t('viewPhotos') + '</button>' : '<span style="color:#999;">-</span>';
         var statusKey = leave.status === 'pending_md' ? 'pendingMD' : leave.status;
         var statusClass = leave.status === 'pending_md' ? 'pending' : leave.status;
-        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${getLeaveDurationText(leave)}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${getLeaveTypeLabel(leave)}</td><td>${formatLeaveDate(leave)}</td><td>${getLeaveDurationText(leave)}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
         if (leave.status === 'pending') {
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
         } else if (leave.status === 'approved' && verifyRole() === 'hr') {
@@ -1842,6 +2034,10 @@
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('reApprove')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
         } else if (leave.status === 'pending_md') {
           html += `<small style="color:#DD6B20;">${t('awaitingMD')}</small>`;
+        }
+        var canManage = (verifyRole() === 'hr' || verifyRole() === 'md');
+        if (canManage) {
+          html += ` <button class="btn btn-secondary btn-small" onclick="openEditLeaveModal('${leave.id}')">${t('edit')}</button> <button class="btn btn-danger btn-small" onclick="deleteLeaveHR('${leave.id}')">${t('delete')}</button>`;
         }
         html += `</td></tr>`;
       });
