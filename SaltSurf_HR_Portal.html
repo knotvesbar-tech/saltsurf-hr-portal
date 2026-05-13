@@ -567,6 +567,14 @@
       return leave.duration + ' ' + t('days');
     }
 
+    function getLeaveTypeLabel(leave) {
+      var label = t(leave.type);
+      if (leave.type === 'holidayLeave' && leave.holidayName) {
+        label += ' - ' + leave.holidayName;
+      }
+      return label;
+    }
+
     function doLogin() {
       try {
         var u = document.getElementById('username').value.trim();
@@ -1033,7 +1041,7 @@
               var dateCol = l.mode === 'hourly' ? l.from + '<br><small style="color:#666;">' + (l.startTime||'') + ' - ' + (l.endTime||'') + '</small>' : (l.to && l.to !== l.from ? l.from + ' ~ ' + l.to : l.from);
               var sKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
               var sClass = l.status === 'pending_md' ? 'pending' : l.status;
-              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + getLeaveDurationText(l) + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
+              return '<tr><td>' + dateCol + '</td><td>' + getLeaveTypeLabel(l) + '</td><td>' + getLeaveDurationText(l) + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
             }).join('')}
           </table>
           </div>
@@ -1114,7 +1122,7 @@
           actions = '<button class="btn btn-secondary btn-small" onclick="openEditLeaveModal(\'' + l.id + '\')">' + t('edit') + '</button> '
                   + '<button class="btn btn-reject btn-small" onclick="cancelLeaveRequest(\'' + l.id + '\')">' + t('cancel') + '</button>';
         }
-        tableRows += '<tr>' + leaveDateCol(l) + '<td>' + t(l.type) + '</td><td>' + getLeaveDurationText(l) + '</td>' + photoCol(l)
+        tableRows += '<tr>' + leaveDateCol(l) + '<td>' + getLeaveTypeLabel(l) + '</td><td>' + getLeaveDurationText(l) + '</td>' + photoCol(l)
                   + '<td><span class="badge badge-' + statusClass + '">' + (T[APP.lang][statusKey] || statusKey) + '</span></td>'
                   + '<td>' + actions + '</td></tr>';
       });
@@ -1179,7 +1187,8 @@
       leavePhotosTemp = [];
       var today = new Date().toISOString().split('T')[0];
       const html = `
-        <div class="form-group"><label>${t('type')}</label><select id="leaveType"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType" onchange="toggleHolidayPicker()"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group" id="holidayPickerGroup" style="display:none;"><label>${t('holidayName')}</label><select id="leaveHolidayName" onchange="onHolidayPicked()"><option value="">-- ${t('holidayName')} --</option>${APP.holidays.map(function(h){return '<option value="'+h.date+'">'+h.date+' - '+h.name+'</option>';}).join('')}</select></div>
         <div class="form-group"><label>${t('leaveMode')}</label>
           <select id="leaveMode" onchange="toggleLeaveMode()">
             <option value="fullday">${t('fullDay')}</option>
@@ -1219,6 +1228,25 @@
       var mode = document.getElementById('leaveMode').value;
       document.getElementById('leaveDateFields').style.display = mode === 'fullday' ? 'block' : 'none';
       document.getElementById('leaveTimeFields').style.display = mode === 'hourly' ? 'block' : 'none';
+      calcLeaveDuration();
+    }
+
+    function toggleHolidayPicker() {
+      var typeEl = document.getElementById('leaveType');
+      var group = document.getElementById('holidayPickerGroup');
+      if (!typeEl || !group) return;
+      group.style.display = typeEl.value === 'holidayLeave' ? 'block' : 'none';
+    }
+
+    function onHolidayPicked() {
+      var hp = document.getElementById('leaveHolidayName');
+      if (!hp || !hp.value) return;
+      var modeEl = document.getElementById('leaveMode');
+      if (modeEl) { modeEl.value = 'fullday'; toggleLeaveMode(); }
+      var sd = document.getElementById('leaveStartDate');
+      var ed = document.getElementById('leaveEndDate');
+      if (sd) sd.value = hp.value;
+      if (ed) ed.value = hp.value;
       calcLeaveDuration();
     }
 
@@ -1309,6 +1337,13 @@
         leave.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
       }
       if (!leave.reason) { showToast(t('pleaseFillAll'), 'error'); return; }
+      if (leave.type === 'holidayLeave') {
+        var hp = document.getElementById('leaveHolidayName');
+        if (!hp || !hp.value) { showToast(t('pleaseFillAll'), 'error'); return; }
+        leave.holidayDate = hp.value;
+        var picked = APP.holidays.find(function(h) { return h.date === hp.value; });
+        leave.holidayName = picked ? picked.name : '';
+      }
       // Quota validation including historical data
       var quotas = { sickLeave: 30, personalLeave: 3, annualLeave: 7, holidayLeave: 15 };
       var user = APP.currentUser;
@@ -1340,7 +1375,8 @@
       }
       leavePhotosTemp = leave.photos ? leave.photos.slice() : [];
       var html = `
-        <div class="form-group"><label>${t('type')}</label><select id="leaveType"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType" onchange="toggleHolidayPicker()"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group" id="holidayPickerGroup" style="display:none;"><label>${t('holidayName')}</label><select id="leaveHolidayName" onchange="onHolidayPicked()"><option value="">-- ${t('holidayName')} --</option>${APP.holidays.map(function(h){return '<option value="'+h.date+'">'+h.date+' - '+h.name+'</option>';}).join('')}</select></div>
         <div class="form-group"><label>${t('leaveMode')}</label>
           <select id="leaveMode" onchange="toggleLeaveMode()">
             <option value="fullday">${t('fullDay')}</option>
@@ -1371,6 +1407,11 @@
       document.getElementById('leaveType').value = leave.type;
       document.getElementById('leaveMode').value = leave.mode || 'fullday';
       toggleLeaveMode();
+      toggleHolidayPicker();
+      if (leave.type === 'holidayLeave' && leave.holidayDate) {
+        var hpEl = document.getElementById('leaveHolidayName');
+        if (hpEl) hpEl.value = leave.holidayDate;
+      }
       if ((leave.mode || 'fullday') === 'hourly') {
         document.getElementById('leaveHourlyDate').value = leave.from || '';
         document.getElementById('leaveStartTime').value = leave.startTime || '';
@@ -1413,6 +1454,16 @@
         var hrs = Math.floor(mins / 60); var rm = mins % 60;
         updated.duration = mins / 60;
         updated.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+      }
+      if (updated.type === 'holidayLeave') {
+        var hp = document.getElementById('leaveHolidayName');
+        if (!hp || !hp.value) { showToast(t('pleaseFillAll'), 'error'); return; }
+        updated.holidayDate = hp.value;
+        var picked = APP.holidays.find(function(h) { return h.date === hp.value; });
+        updated.holidayName = picked ? picked.name : '';
+      } else {
+        updated.holidayDate = null;
+        updated.holidayName = null;
       }
       Object.assign(leave, updated);
       scheduleSave();
@@ -1617,7 +1668,7 @@
             var from = l.from, to = l.to || l.from;
             return dateStr >= from && dateStr <= to;
           });
-          var leaveBadge = leaveOnDate ? '<br><span style="font-size:10px; color:#E74C3C; font-weight:600;">\u{1F4CB} ' + t('onLeave') + '</span>' : '';
+          var leaveBadge = leaveOnDate ? '<br><span style="font-size:10px; color:#E74C3C; font-weight:600;">\u{1F4CB} ' + getLeaveTypeLabel(leaveOnDate) + '</span>' : '';
           // Check approved OT for this date
           var otOnDate = APP.ots.find(function(o) {
             return o.empId === emp.id && o.status === 'approved' && o.date === dateStr;
@@ -1974,7 +2025,7 @@
         const photoBtn = photoCount > 0 ? '<button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + leave.id + '\')">\u{1F4F7} ' + photoCount + ' ' + t('viewPhotos') + '</button>' : '<span style="color:#999;">-</span>';
         var statusKey = leave.status === 'pending_md' ? 'pendingMD' : leave.status;
         var statusClass = leave.status === 'pending_md' ? 'pending' : leave.status;
-        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${getLeaveDurationText(leave)}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${getLeaveTypeLabel(leave)}</td><td>${formatLeaveDate(leave)}</td><td>${getLeaveDurationText(leave)}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
         if (leave.status === 'pending') {
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
         } else if (leave.status === 'approved' && verifyRole() === 'hr') {
