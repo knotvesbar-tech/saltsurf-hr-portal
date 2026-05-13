@@ -14,6 +14,10 @@
   <link rel="apple-touch-icon" href="icon-152.png">
   <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
   <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+  <!-- Prevent Safari / WebKit HTTP cache from serving stale HTML -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <!-- No external icon library needed - using Unicode symbols -->
   <style>
     /* ===== RESET & BASE ===== */
@@ -790,7 +794,7 @@
       employee: ['dashboard', 'leaveRequest', 'otRequest', 'schedule', 'mySchedule', 'contacts', 'publicHolidays'],
       depthead: ['dashboard', 'leaveRequest', 'otRequest', 'schedule', 'mySchedule', 'scheduleManagement', 'deptApprovals', 'reportDisciplinary', 'contacts', 'publicHolidays'],
       hr: ['dashboard', 'leaveRequest', 'otRequest', 'allLeaveRequests', 'allOTRequests', 'approvals', 'disciplinaryApprovals', 'manageDisciplinary', 'scheduleManagement', 'employeeManagement', 'attendance', 'contacts', 'reports', 'activityLog', 'publicHolidays'],
-      md: ['dashboard', 'leaveRequest', 'otRequest', 'allLeaveRequests', 'allOTRequests', 'approvals', 'disciplinaryApprovals', 'manageDisciplinary', 'scheduleManagement', 'employeeManagement', 'attendance', 'contacts', 'reports', 'activityLog', 'publicHolidays', 'permissionSettings'],
+      md: ['dashboard', 'leaveRequest', 'otRequest', 'allLeaveRequests', 'allOTRequests', 'approvals', 'disciplinaryApprovals', 'manageDisciplinary', 'reportDisciplinary', 'scheduleManagement', 'employeeManagement', 'attendance', 'contacts', 'reports', 'activityLog', 'publicHolidays', 'permissionSettings'],
       admin: ['dashboard', 'leaveRequest', 'otRequest', 'allLeaveRequests', 'allOTRequests', 'employeeManagement', 'attendance', 'contacts', 'reports', 'activityLog', 'publicHolidays', 'permissionSettings']
     };
 
@@ -3677,10 +3681,16 @@
 
     function renderReportDisciplinary() {
       var role = verifyRole();
-      if (role !== 'depthead') { showToast(t('accessDenied'), 'error'); return; }
+      if (role !== 'depthead' && role !== 'md') { showToast(t('accessDenied'), 'error'); return; }
       var user = APP.currentUser;
+      var isDeptScoped = (role === 'depthead');
       var deptEmps = APP.employees.filter(function(e) {
-        return (e.dept === user.dept || e.section === user.section) && e.id !== user.id && e.role !== 'md' && e.role !== 'admin';
+        if (e.id === user.id) return false;
+        if (e.role === 'md' || e.role === 'admin') return false;
+        if (isDeptScoped) {
+          return (e.dept === user.dept || e.section === user.section);
+        }
+        return true; // MD: any employee across all departments
       });
       var content = document.getElementById('content');
       var incidentOpts = INCIDENT_TYPES.map(function(inc) {
@@ -3703,13 +3713,14 @@
           <button class="btn btn-primary" onclick="submitDisciplinary()" style="width:auto;">${t('submitDisciplinary')}</button>
         </div>
         <div class="card" style="margin-top:20px;">
-          <h3>\u{1F4CB} ${t('disciplinaryRecords')} - ${t('department')}: ${sanitize(user.dept)}</h3>
+          <h3>\u{1F4CB} ${t('disciplinaryRecords')} - ${isDeptScoped ? (t('department') + ': ' + sanitize(user.dept)) : (t('allSections') || 'All Departments')}</h3>
           <div style="overflow-x:auto;">
           <table>
             <tr><th>${t('employee')}</th><th>${t('incidentDate')}</th><th>${t('incidentType')}</th><th>${t('severityCode')}</th><th>${t('disciplinaryStep')}</th><th>${t('status')}</th><th>${t('acknowledged')}</th><th>${t('action')}</th></tr>
             ${APP.disciplines.filter(function(d) {
               var emp = APP.employees.find(function(e) { return e.id === d.empId; });
-              return emp && emp.dept === user.dept;
+              if (!emp) return false;
+              return isDeptScoped ? emp.dept === user.dept : true;
             }).slice().reverse().map(function(d) {
               var emp = APP.employees.find(function(e) { return e.id === d.empId; });
               var stepInfo = DISCIPLINARY_STEPS.find(function(s) { return s.step === d.step; });
@@ -3728,7 +3739,7 @@
             }).join('')}
           </table>
           </div>
-          ${APP.disciplines.filter(function(d) { var emp = APP.employees.find(function(e) { return e.id === d.empId; }); return emp && emp.dept === user.dept; }).length === 0 ? '<p style="color:#999;text-align:center;padding:15px;">' + t('noDisciplinaryData') + '</p>' : ''}
+          ${APP.disciplines.filter(function(d) { var emp = APP.employees.find(function(e) { return e.id === d.empId; }); if (!emp) return false; return isDeptScoped ? emp.dept === user.dept : true; }).length === 0 ? '<p style="color:#999;text-align:center;padding:15px;">' + t('noDisciplinaryData') + '</p>' : ''}
         </div>
       `;
     }
@@ -3746,7 +3757,7 @@
 
     function submitDisciplinary() {
       var role = verifyRole();
-      if (role !== 'depthead') { showToast(t('accessDenied'), 'error'); return; }
+      if (role !== 'depthead' && role !== 'md') { showToast(t('accessDenied'), 'error'); return; }
       var empId = document.getElementById('discEmpId').value;
       var incDate = document.getElementById('discDate').value;
       var incType = sanitize(document.getElementById('discIncident').value);
@@ -4451,13 +4462,41 @@
     });
   </script>
   <script>
-    // Register Service Worker for PWA
+    // Register Service Worker for PWA + auto-update flow (esp. for Safari/iOS)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(function(reg) {
           console.log('[PWA] Service Worker registered, scope:', reg.scope);
+
+          // Force an update check now and every time the tab becomes visible
+          try { reg.update(); } catch (e) {}
+          document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+              try { reg.update(); } catch (e) {}
+            }
+          });
+
+          // When a new SW is found and finishes installing, tell it to skip waiting
+          reg.addEventListener('updatefound', function() {
+            var newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', function() {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                newWorker.postMessage('SKIP_WAITING');
+              }
+            });
+          });
         }).catch(function(err) {
           console.log('[PWA] Service Worker registration failed:', err);
+        });
+
+        // When the active SW changes (after skipWaiting), reload the page once
+        // so the user gets the fresh HTML/JS instead of stale cached UI.
+        var _reloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', function() {
+          if (_reloaded) return;
+          _reloaded = true;
+          window.location.reload();
         });
       });
     }
