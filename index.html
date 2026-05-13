@@ -820,15 +820,21 @@
     var PAGE_ACCESS = {};
     function rebuildPageAccess() {
       var roles = ['employee', 'depthead', 'hr', 'md', 'admin'];
-      var userDept = (APP.currentUser && APP.currentUser.dept) || null;
+      // Auto-unwrap legacy nested format if present
+      if (APP.permissions && APP.permissions.__default__ && !Array.isArray(APP.permissions.employee)) {
+        APP.permissions = APP.permissions.__default__;
+      }
       roles.forEach(function(role) {
-        var pages = (typeof _getEffectivePerms === 'function')
-          ? _getEffectivePerms(role, userDept)
-          : (DEFAULT_PAGE_ACCESS[role] || []).slice();
-        if ((role === 'admin' || role === 'md') && pages.indexOf('permissionSettings') === -1) {
-          pages.push('permissionSettings');
+        if (APP.permissions && APP.permissions[role]) {
+          // Use custom permissions, but always ensure admin/md have permissionSettings
+          var pages = APP.permissions[role].slice();
+          if ((role === 'admin' || role === 'md') && pages.indexOf('permissionSettings') === -1) {
+            pages.push('permissionSettings');
+          }
+          PAGE_ACCESS[role] = pages;
+        } else {
+          PAGE_ACCESS[role] = DEFAULT_PAGE_ACCESS[role].slice();
         }
-        PAGE_ACCESS[role] = pages;
       });
     }
     rebuildPageAccess();
@@ -4230,72 +4236,24 @@
     // ===== PERMISSION SETTINGS (Foodstory-style toggle grid) =====
     var _permsDirty = false;
     var _permsChangeLog = []; // track changes for the save log
-    var _selectedPermDept = '__default__'; // currently selected dept in the picker
-
-    var PERM_ROLES = ['employee', 'depthead', 'hr', 'md', 'admin'];
+    var _selectedPermRole = 'employee'; // currently shown role in the picker
 
     function _initPermsIfNeeded() {
+      // Handle previously-saved nested format { __default__: { role: [pages] }, ... } -> flat { role: [pages] }
+      if (APP.permissions && APP.permissions.__default__ && !Array.isArray(APP.permissions.employee)) {
+        APP.permissions = APP.permissions.__default__;
+      }
       if (!APP.permissions) {
-        APP.permissions = { __default__: {} };
-        PERM_ROLES.forEach(function(r) {
-          APP.permissions.__default__[r] = (DEFAULT_PAGE_ACCESS[r] || []).slice();
-        });
-        return;
-      }
-      // Migrate legacy flat format { role: [pages] } -> { __default__: { role: [pages] } }
-      if (Array.isArray(APP.permissions.employee)) {
-        APP.permissions = { __default__: APP.permissions };
-      }
-      if (!APP.permissions.__default__) {
-        APP.permissions.__default__ = {};
-        PERM_ROLES.forEach(function(r) {
-          APP.permissions.__default__[r] = (DEFAULT_PAGE_ACCESS[r] || []).slice();
+        APP.permissions = {};
+        ['employee', 'depthead', 'hr', 'md', 'admin'].forEach(function(r) {
+          APP.permissions[r] = (PAGE_ACCESS[r] || DEFAULT_PAGE_ACCESS[r] || []).slice();
         });
       }
-    }
-
-    function _seedDeptIfNeeded(dept) {
-      _initPermsIfNeeded();
-      if (!dept || dept === '__default__') return;
-      if (!APP.permissions[dept]) {
-        APP.permissions[dept] = {};
-        PERM_ROLES.forEach(function(r) {
-          var base = APP.permissions.__default__[r] || DEFAULT_PAGE_ACCESS[r] || [];
-          APP.permissions[dept][r] = base.slice();
-        });
-      }
-    }
-
-    // Effective permissions for a user-like (role, dept) pair
-    function _getEffectivePerms(role, dept) {
-      if (APP.permissions) {
-        // Legacy flat format support
-        if (Array.isArray(APP.permissions[role])) {
-          return APP.permissions[role].slice();
-        }
-        if (dept && APP.permissions[dept] && Array.isArray(APP.permissions[dept][role])) {
-          return APP.permissions[dept][role].slice();
-        }
-        if (APP.permissions.__default__ && Array.isArray(APP.permissions.__default__[role])) {
-          return APP.permissions.__default__[role].slice();
-        }
-      }
-      return (DEFAULT_PAGE_ACCESS[role] || []).slice();
-    }
-
-    // What the permission-grid should display for the currently selected dept + role
-    function _getDeptViewPerms(role) {
-      _initPermsIfNeeded();
-      if (APP.permissions[_selectedPermDept] && Array.isArray(APP.permissions[_selectedPermDept][role])) {
-        return APP.permissions[_selectedPermDept][role];
-      }
-      return (APP.permissions.__default__[role] || DEFAULT_PAGE_ACCESS[role] || []).slice();
     }
 
     function renderPermissionSettings() {
       var role = verifyRole();
       if (role !== 'admin' && role !== 'md') { showToast(t('accessDenied'), 'error'); return; }
-      _initPermsIfNeeded();
       rebuildPageAccess();
 
       var roles = [
@@ -4306,17 +4264,8 @@
         { key: 'admin', label: t('admin') }
       ];
 
-      // Department picker options
-      var deptList = (APP.departments || []).slice().sort();
-      var deptOptions = '<option value="__default__"' + (_selectedPermDept === '__default__' ? ' selected' : '') + '>\u{1F30D} All Departments (Default)</option>';
-      deptList.forEach(function(d) {
-        var customized = !!(APP.permissions[d]);
-        var dot = customized ? ' • customized' : '';
-        deptOptions += '<option value="' + d.replace(/"/g, '&quot;') + '"' + (_selectedPermDept === d ? ' selected' : '') + '>' + d + dot + '</option>';
-      });
-
-      var isDeptScope = _selectedPermDept !== '__default__';
-      var scopeLabel = isDeptScope ? _selectedPermDept : 'All Departments (Default)';
+      // Ensure selected role is valid (in case data was reset)
+      if (!roles.some(function(r) { return r.key === _selectedPermRole; })) _selectedPermRole = 'employee';
 
       var html = '<div class="card" style="padding:24px;padding-bottom:' + (_permsDirty ? '90px' : '24px') + ';">';
       html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">';
@@ -4324,20 +4273,19 @@
       html += '<button onclick="resetPermissionsToDefault()" style="background:#95a5a6;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">' + t('resetToDefault') + '</button>';
       html += '</div>';
 
-      // Department selector
+      // Role picker
+      var roleOptions = roles.map(function(r) {
+        return '<option value="' + r.key + '"' + (r.key === _selectedPermRole ? ' selected' : '') + '>' + r.label + '</option>';
+      }).join('');
       html += '<div style="background:#F0F4F8;border:1px solid #D6E0EA;border-radius:10px;padding:14px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">';
-      html += '<label style="font-weight:600;color:#1A365D;margin:0;">\u{1F3E2} Department:</label>';
-      html += '<select onchange="onPermDeptChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1.5px solid #B8C7D6;background:#fff;font-family:inherit;font-size:14px;min-width:240px;">' + deptOptions + '</select>';
-      if (isDeptScope) {
-        html += '<button onclick="clearDeptPermissions()" style="background:#fff;color:#E67E22;border:1.5px solid #E67E22;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">Reset this department to default</button>';
-      }
-      html += '<div style="flex:1;min-width:200px;font-size:12px;color:#4A5568;">Editing scope: <strong style="color:#1A365D;">' + scopeLabel + '</strong></div>';
+      html += '<label style="font-weight:600;color:#1A365D;margin:0;">\u{1F464} Role:</label>';
+      html += '<select onchange="onPermRoleChange(this.value)" style="padding:8px 12px;border-radius:8px;border:1.5px solid #B8C7D6;background:#fff;font-family:inherit;font-size:14px;min-width:220px;">' + roleOptions + '</select>';
       html += '</div>';
       html += '<p style="color:#7f8c8d;font-size:13px;margin-bottom:20px;">' + t('permissionHint') + '</p>';
 
-      // Build grid for each role
-      roles.forEach(function(r) {
-        var currentPerms = _getDeptViewPerms(r.key);
+      // Build grid for the selected role only
+      roles.filter(function(r) { return r.key === _selectedPermRole; }).forEach(function(r) {
+        var currentPerms = PAGE_ACCESS[r.key] || [];
         // Count how many toggleable pages are ON (exclude dashboard which is locked)
         var toggleablePages = ALL_PAGES.filter(function(pg) { return pg.key !== 'dashboard'; });
         var onCount = toggleablePages.filter(function(pg) { return currentPerms.indexOf(pg.key) !== -1; }).length;
@@ -4398,22 +4346,8 @@
       document.getElementById('content').innerHTML = html;
     }
 
-    function onPermDeptChange(dept) {
-      _selectedPermDept = dept || '__default__';
-      renderPermissionSettings();
-    }
-
-    function clearDeptPermissions() {
-      var verifiedRole = verifyRole();
-      if (verifiedRole !== 'admin' && verifiedRole !== 'md') return;
-      if (_selectedPermDept === '__default__') return;
-      if (!confirm('Reset ' + _selectedPermDept + ' to use default permissions?')) return;
-      if (APP.permissions && APP.permissions[_selectedPermDept]) {
-        delete APP.permissions[_selectedPermDept];
-      }
-      _permsDirty = true;
-      _permsChangeLog.push('[' + _selectedPermDept + '] = RESET (use default)');
-      rebuildPageAccess();
+    function onPermRoleChange(role) {
+      _selectedPermRole = role || 'employee';
       renderPermissionSettings();
     }
 
@@ -4422,13 +4356,11 @@
       if (verifiedRole !== 'admin' && verifiedRole !== 'md') { showToast(t('accessDenied'), 'error'); return; }
 
       _initPermsIfNeeded();
-      _seedDeptIfNeeded(_selectedPermDept);
-      var bucket = APP.permissions[_selectedPermDept];
-      if (!bucket[role]) {
-        bucket[role] = (APP.permissions.__default__[role] || DEFAULT_PAGE_ACCESS[role] || []).slice();
+      if (!APP.permissions[role]) {
+        APP.permissions[role] = (DEFAULT_PAGE_ACCESS[role] || []).slice();
       }
 
-      var perms = bucket[role];
+      var perms = APP.permissions[role];
       if (isOn) {
         if (perms.indexOf(page) === -1) perms.push(page);
       } else {
@@ -4436,13 +4368,8 @@
         if (idx !== -1) perms.splice(idx, 1);
       }
 
-      // Admin/MD must always retain permissionSettings access
-      if ((role === 'admin' || role === 'md') && perms.indexOf('permissionSettings') === -1) {
-        perms.push('permissionSettings');
-      }
-
       _permsDirty = true;
-      _permsChangeLog.push('[' + _selectedPermDept + '] ' + role + ' → ' + page + ' = ' + (isOn ? 'ON' : 'OFF'));
+      _permsChangeLog.push(role + ' → ' + page + ' = ' + (isOn ? 'ON' : 'OFF'));
       rebuildPageAccess();
       renderPermissionSettings();
     }
@@ -4452,10 +4379,8 @@
       if (role !== 'admin' && role !== 'md') return;
       if (!confirm(t('confirmResetPermissions'))) return;
       APP.permissions = null;
-      _selectedPermDept = '__default__';
       _permsDirty = true;
-      _permsChangeLog = ['RESET ALL TO DEFAULT'];
-      _initPermsIfNeeded();
+      _permsChangeLog = ['RESET TO DEFAULT'];
       rebuildPageAccess();
       renderPermissionSettings();
     }
@@ -4465,25 +4390,23 @@
       if (verifiedRole !== 'admin' && verifiedRole !== 'md') return;
 
       _initPermsIfNeeded();
-      _seedDeptIfNeeded(_selectedPermDept);
-      var bucket = APP.permissions[_selectedPermDept];
 
       if (isOn) {
         var allKeys = ALL_PAGES.map(function(pg) { return pg.key; });
-        bucket[role] = allKeys.slice();
-        if (bucket[role].indexOf('dashboard') === -1) bucket[role].push('dashboard');
+        APP.permissions[role] = allKeys.slice();
+        if (APP.permissions[role].indexOf('dashboard') === -1) APP.permissions[role].push('dashboard');
       } else {
-        bucket[role] = ['dashboard'];
+        APP.permissions[role] = ['dashboard'];
       }
 
       if (role === 'admin' || role === 'md') {
-        if (bucket[role].indexOf('permissionSettings') === -1) {
-          bucket[role].push('permissionSettings');
+        if (APP.permissions[role].indexOf('permissionSettings') === -1) {
+          APP.permissions[role].push('permissionSettings');
         }
       }
 
       _permsDirty = true;
-      _permsChangeLog.push('[' + _selectedPermDept + '] ' + role + ' → ALL = ' + (isOn ? 'ON' : 'OFF'));
+      _permsChangeLog.push(role + ' → ALL = ' + (isOn ? 'ON' : 'OFF'));
       rebuildPageAccess();
       renderPermissionSettings();
     }
