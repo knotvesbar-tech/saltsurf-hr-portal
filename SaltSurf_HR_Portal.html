@@ -54,7 +54,7 @@
 
     /* ===== SIDEBAR ===== */
     .sidebar { width: 250px; background: #002A4E; color: white; display: flex; flex-direction: column; overflow-y: auto; border-right: 1px solid rgba(255,255,255,0.06); }
-    .sidebar-logo { padding: 22px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); font-weight: 700; }
+    .sidebar-logo { padding: 20px 16px 16px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.08); }
     .user-section { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: center; }
     .user-avatar { width: 46px; height: 46px; background: linear-gradient(135deg, #FF6C37, #FF8F5E); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 16px; margin: 0 auto 10px; box-shadow: 0 2px 8px rgba(255,108,55,0.3); }
     .user-name { font-weight: 600; font-size: 14px; color: rgba(255,255,255,0.95); }
@@ -185,7 +185,7 @@
           </div>
           <div class="form-group">
             <label id="labelPassword">Password</label>
-            <input type="password" id="password" placeholder="e.g., md123" onkeydown="if(event.key==='Enter')doLogin()">
+            <input type="password" id="password" placeholder="" onkeydown="if(event.key==='Enter')doLogin()">
           </div>
           <button type="button" class="btn btn-primary" id="loginBtn" onclick="doLogin()">Login</button>
         </div>
@@ -233,7 +233,7 @@
   <!-- MAIN APP -->
   <div id="mainApp" style="display:none" class="app-container">
     <div class="sidebar">
-      <div class="sidebar-logo"><img src="logo_sidebar.png" alt="Salt Surf" style="width:48px; height:48px; border-radius:50%; margin-bottom:6px; display:block; margin-left:auto; margin-right:auto; opacity:0.95;"><span style="font-size:11px; letter-spacing:2px; color:rgba(255,255,255,0.8);">SALT SURF</span></div>
+      <div class="sidebar-logo"><img src="horizontal logo/SS_Clear Sticker_Horizon Logo.png" alt="Salt Surf" style="width:180px; height:auto; filter:invert(1); opacity:0.92; mix-blend-mode:screen;"></div>
       <div class="user-section">
         <div class="user-avatar">N</div>
         <div class="user-name">Name</div>
@@ -556,6 +556,17 @@
 
     function t(key) { return T[APP.lang][key] || key; }
 
+    function getLeaveDurationText(leave) {
+      if (!leave.duration && leave.duration !== 0) return '-';
+      if (leave.mode === 'hourly') {
+        var totalMins = Math.round(leave.duration * 60);
+        var hrs = Math.floor(totalMins / 60);
+        var rm = totalMins % 60;
+        return hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+      }
+      return leave.duration + ' ' + t('days');
+    }
+
     function doLogin() {
       try {
         var u = document.getElementById('username').value.trim();
@@ -650,6 +661,12 @@
     function goToSignup() {
       document.getElementById('signupPage').style.display = 'block';
       document.getElementById('loginPage').style.display = 'none';
+      ['signupEmpId','signupName','signupUsername','signupPassword','signupPhone','signupEmail','signupSection','signupPos','signupAddress','signupLineId','signupBirthday'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      ['signupDept','signupNationality'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.selectedIndex = 0;
+      });
       renderSignupPage();
     }
 
@@ -682,7 +699,7 @@
         address: sanitize(document.getElementById('signupAddress').value.trim()),
         lineId: sanitize(document.getElementById('signupLineId').value.trim()),
         nickname: '', startDate: new Date().toISOString().split('T')[0], level: '',
-        histSick: 0, histPersonal: 0, histAnnual: 0
+        histSick: 0, histPersonal: 0, histAnnual: 0, histHoliday: 0
       };
       APP.employees.push(newEmp);
       addLog('signup', `New account created: ${username}`);
@@ -1016,7 +1033,7 @@
               var dateCol = l.mode === 'hourly' ? l.from + '<br><small style="color:#666;">' + (l.startTime||'') + ' - ' + (l.endTime||'') + '</small>' : (l.to && l.to !== l.from ? l.from + ' ~ ' + l.to : l.from);
               var sKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
               var sClass = l.status === 'pending_md' ? 'pending' : l.status;
-              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + (l.durationText || '-') + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
+              return '<tr><td>' + dateCol + '</td><td>' + t(l.type) + '</td><td>' + getLeaveDurationText(l) + '</td><td>' + (l.reason || '-') + '</td><td><span class="badge badge-' + sClass + '">' + t(sKey) + '</span></td></tr>';
             }).join('')}
           </table>
           </div>
@@ -1087,14 +1104,29 @@
         }
         return '<td>' + l.from + '</td>';
       };
+      var myLeaves = APP.leaves.filter(function(l) { return l.empId === APP.currentUser.id; });
+      var tableRows = '';
+      myLeaves.forEach(function(l) {
+        var statusKey = l.status === 'pending_md' ? 'pendingMD' : l.status;
+        var statusClass = l.status === 'pending_md' ? 'pending' : l.status;
+        var actions = '-';
+        if (l.status === 'pending') {
+          actions = '<button class="btn btn-secondary btn-small" onclick="openEditLeaveModal(\'' + l.id + '\')">' + t('edit') + '</button> '
+                  + '<button class="btn btn-reject btn-small" onclick="cancelLeaveRequest(\'' + l.id + '\')">' + t('cancel') + '</button>';
+        }
+        tableRows += '<tr>' + leaveDateCol(l) + '<td>' + t(l.type) + '</td><td>' + getLeaveDurationText(l) + '</td>' + photoCol(l)
+                  + '<td><span class="badge badge-' + statusClass + '">' + (T[APP.lang][statusKey] || statusKey) + '</span></td>'
+                  + '<td>' + actions + '</td></tr>';
+      });
+      if (myLeaves.length === 0) tableRows = '<tr><td colspan="6" style="text-align:center;color:#999;padding:16px;">' + t('noData') + '</td></tr>';
       content.innerHTML = `
         <button class="btn btn-primary mb-20" onclick="openLeaveModal()">${t('newRequest')}</button>
         <div class="card">
           <h3>${t('leaveRequest')}</h3>
           <div style="overflow-x:auto;">
           <table>
-            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('photos')}</th><th>${t('status')}</th></tr>
-            ${APP.leaves.filter(l => l.empId === APP.currentUser.id).map(l => `<tr>${leaveDateCol(l)}<td>${t(l.type)}</td><td>${l.durationText || '-'}</td>${photoCol(l)}<td><span class="badge badge-${l.status}">${T[APP.lang][l.status]}</span></td></tr>`).join('')}
+            <tr><th>${t('date')}</th><th>${t('type')}</th><th>${t('duration')}</th><th>${t('photos')}</th><th>${t('status')}</th><th>${t('action')}</th></tr>
+            ${tableRows}
           </table>
           </div>
         </div>
@@ -1299,6 +1331,120 @@
       renderLeaveRequest();
     }
 
+    function openEditLeaveModal(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      var role = APP.currentUser.role;
+      if (role !== 'hr' && role !== 'md') {
+        if (leave.empId !== APP.currentUser.id || leave.status !== 'pending') { showToast(t('accessDenied'), 'error'); return; }
+      }
+      leavePhotosTemp = leave.photos ? leave.photos.slice() : [];
+      var html = `
+        <div class="form-group"><label>${t('type')}</label><select id="leaveType"><option value="sickLeave">${t('sickLeave')}</option><option value="personalLeave">${t('personalLeave')}</option><option value="annualLeave">${t('annualLeave')}</option><option value="holidayLeave">${t('holidayLeave')}</option></select></div>
+        <div class="form-group"><label>${t('leaveMode')}</label>
+          <select id="leaveMode" onchange="toggleLeaveMode()">
+            <option value="fullday">${t('fullDay')}</option>
+            <option value="hourly">${t('hourly')}</option>
+          </select>
+        </div>
+        <div id="leaveDateFields">
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startDate')}</label><input type="date" id="leaveStartDate" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endDate')}</label><input type="date" id="leaveEndDate" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveTimeFields" style="display:none;">
+          <div class="form-group"><label>${t('date')}</label><input type="date" id="leaveHourlyDate"></div>
+          <div style="display:flex; gap:10px;">
+            <div class="form-group" style="flex:1;"><label>${t('startTime')}</label><input type="time" id="leaveStartTime" onchange="calcLeaveDuration()"></div>
+            <div class="form-group" style="flex:1;"><label>${t('endTime')}</label><input type="time" id="leaveEndTime" onchange="calcLeaveDuration()"></div>
+          </div>
+        </div>
+        <div id="leaveDurationDisplay" style="padding:10px; background:#F0F4F8; border-radius:6px; margin-bottom:15px; font-size:14px; color:#1A365D; font-weight:600;"></div>
+        <div class="form-group"><label>${t('reason')}</label><textarea id="leaveReason" rows="3"></textarea></div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="closeModal()">${t('cancel')}</button>
+          <button class="btn btn-primary" onclick="saveEditLeave('${leaveId}')">${t('submit')}</button>
+        </div>
+      `;
+      openModal(t('edit') + ' - ' + t('leaveRequest'), html);
+      document.getElementById('leaveType').value = leave.type;
+      document.getElementById('leaveMode').value = leave.mode || 'fullday';
+      toggleLeaveMode();
+      if ((leave.mode || 'fullday') === 'hourly') {
+        document.getElementById('leaveHourlyDate').value = leave.from || '';
+        document.getElementById('leaveStartTime').value = leave.startTime || '';
+        document.getElementById('leaveEndTime').value = leave.endTime || '';
+      } else {
+        document.getElementById('leaveStartDate').value = leave.from || '';
+        document.getElementById('leaveEndDate').value = leave.to || leave.from || '';
+      }
+      document.getElementById('leaveReason').value = leave.reason || '';
+      calcLeaveDuration();
+    }
+
+    function saveEditLeave(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      var mode = document.getElementById('leaveMode').value;
+      var updated = {
+        type: document.getElementById('leaveType').value,
+        mode: mode,
+        reason: sanitize(document.getElementById('leaveReason').value)
+      };
+      if (mode === 'fullday') {
+        updated.from = document.getElementById('leaveStartDate').value;
+        updated.to = document.getElementById('leaveEndDate').value;
+        if (!updated.from || !updated.to) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (updated.to < updated.from) { showToast(t('endAfterStart'), 'error'); return; }
+        var d1 = new Date(updated.from); var d2 = new Date(updated.to);
+        updated.duration = Math.round((d2 - d1) / 86400000) + 1;
+        updated.durationText = updated.duration + ' ' + t('days');
+        updated.startTime = null; updated.endTime = null;
+      } else {
+        updated.from = document.getElementById('leaveHourlyDate').value;
+        updated.to = updated.from;
+        updated.startTime = document.getElementById('leaveStartTime').value;
+        updated.endTime = document.getElementById('leaveEndTime').value;
+        if (!updated.from || !updated.startTime || !updated.endTime) { showToast(t('pleaseFillAll'), 'error'); return; }
+        if (updated.endTime <= updated.startTime) { showToast(t('endTimeAfterStart'), 'error'); return; }
+        var st = updated.startTime.split(':'); var et = updated.endTime.split(':');
+        var mins = (parseInt(et[0])*60 + parseInt(et[1])) - (parseInt(st[0])*60 + parseInt(st[1]));
+        var hrs = Math.floor(mins / 60); var rm = mins % 60;
+        updated.duration = mins / 60;
+        updated.durationText = hrs + ' ' + t('hours') + (rm > 0 ? ' ' + rm + ' ' + t('minutes') : '');
+      }
+      Object.assign(leave, updated);
+      scheduleSave();
+      addLog('leave_edit', 'Leave ' + leaveId + ' edited by ' + APP.currentUser.username);
+      showToast(t('leaveSubmitted'), 'success');
+      closeModal();
+      if (APP.currentUser.role === 'hr' || APP.currentUser.role === 'md') { renderAllLeaveRequests(); } else { renderLeaveRequest(); }
+    }
+
+    function cancelLeaveRequest(leaveId) {
+      var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
+      if (!leave) return;
+      if (leave.empId !== APP.currentUser.id || leave.status !== 'pending') { showToast(t('accessDenied'), 'error'); return; }
+      if (!confirm(t('confirmDelete'))) return;
+      APP.leaves = APP.leaves.filter(function(l) { return l.id !== leaveId; });
+      scheduleSave();
+      addLog('leave_cancel', 'Leave ' + leaveId + ' cancelled by ' + APP.currentUser.username);
+      showToast(t('deletedMsg'), 'success');
+      renderLeaveRequest();
+    }
+
+    function deleteLeaveHR(leaveId) {
+      var role = verifyRole();
+      if (role !== 'hr' && role !== 'md') { showToast(t('accessDenied'), 'error'); return; }
+      if (!confirm(t('confirmDelete'))) return;
+      APP.leaves = APP.leaves.filter(function(l) { return l.id !== leaveId; });
+      scheduleSave();
+      addLog('leave_delete', 'Leave ' + leaveId + ' deleted by ' + APP.currentUser.username);
+      showToast(t('deletedMsg'), 'success');
+      renderAllLeaveRequests();
+    }
+
     function viewLeavePhotos(leaveId) {
       var leave = APP.leaves.find(function(l) { return l.id === leaveId; });
       if (!leave || !leave.photos || leave.photos.length === 0) {
@@ -1404,7 +1550,8 @@
       'A': { label: 'A (07:00-16:00)', time: '07:00-16:00', color: '#27AE60', bg: 'rgba(39,174,96,0.15)' },
       'B': { label: 'B (10:00-19:00)', time: '10:00-19:00', color: '#2980B9', bg: 'rgba(41,128,185,0.15)' },
       'C': { label: 'C (12:00-21:00)', time: '12:00-21:00', color: '#8E44AD', bg: 'rgba(142,68,173,0.15)' },
-      'OFF': { label: 'OFF', time: '', color: '#999', bg: '#f5f5f5' }
+      'OFF': { label: 'OFF', time: '', color: '#999', bg: '#f5f5f5' },
+      'PH': { label: 'PH', time: '', color: '#C05621', bg: 'rgba(192,86,33,0.12)' }
     };
 
     let scheduleWeekStart = new Date();
@@ -1476,12 +1623,17 @@
             return o.empId === emp.id && o.status === 'approved' && o.date === dateStr;
           });
           var otBadge = otOnDate ? '<br><span style="font-size:10px; color:#F39C12; font-weight:600;">\u23F0 OT ' + (otOnDate.startTime||'') + '-' + (otOnDate.endTime||'') + '</span>' : '';
+          var phBadge = '';
+          if (shiftKey === 'PH') {
+            var phHoliday = APP.holidays.find(function(h) { return h.date === dateStr; });
+            if (phHoliday) phBadge = '<br><span style="font-size:10px; color:#C05621; font-weight:500;">' + phHoliday.name + '</span>';
+          }
           var overlayBg = leaveOnDate ? 'rgba(231,76,60,0.12)' : display.bg;
           const canEdit = isHRorMD || (isDeptHead && emp.dept === APP.currentUser.dept);
           if (canEdit) {
-            tableHTML += `<td style="text-align:center; cursor:pointer; background:${overlayBg}; border:1px solid #eee;" onclick="editScheduleCell('${emp.id}', '${dateStr}')"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${leaveBadge}${otBadge}${pendingBadge}</td>`;
+            tableHTML += `<td style="text-align:center; cursor:pointer; background:${overlayBg}; border:1px solid #eee;" onclick="editScheduleCell('${emp.id}', '${dateStr}')"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${phBadge}${leaveBadge}${otBadge}${pendingBadge}</td>`;
           } else {
-            tableHTML += `<td style="text-align:center; background:${overlayBg};"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${leaveBadge}${otBadge}${pendingBadge}</td>`;
+            tableHTML += `<td style="text-align:center; background:${overlayBg};"><span style="color:${display.color}; font-weight:600; font-size:13px;">${display.text}</span>${phBadge}${leaveBadge}${otBadge}${pendingBadge}</td>`;
           }
         }
         tableHTML += '</tr>';
@@ -1759,7 +1911,7 @@
       pendingLeaves.forEach(leave => {
         const emp = APP.employees.find(e => e.id === leave.empId);
         if (emp && emp.dept === deptHeadDept) {
-          html += `<tr><td>${emp.name}</td><td>${leave.type}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveDeptRequest('leave', '${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectDeptRequest('leave', '${leave.id}')">${t('reject')}</button></td></tr>`;
+          html += `<tr><td>${emp.name}</td><td>${t(leave.type)}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveDeptRequest('leave', '${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectDeptRequest('leave', '${leave.id}')">${t('reject')}</button></td></tr>`;
         }
       });
       html += '</table></div>';
@@ -1822,7 +1974,7 @@
         const photoBtn = photoCount > 0 ? '<button class="btn btn-secondary btn-small" onclick="viewLeavePhotos(\'' + leave.id + '\')">\u{1F4F7} ' + photoCount + ' ' + t('viewPhotos') + '</button>' : '<span style="color:#999;">-</span>';
         var statusKey = leave.status === 'pending_md' ? 'pendingMD' : leave.status;
         var statusClass = leave.status === 'pending_md' ? 'pending' : leave.status;
-        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${leave.durationText || '-'}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
+        html += `<tr><td>${emp ? (emp.empId || emp.id) : '-'}</td><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${formatLeaveDate(leave)}</td><td>${getLeaveDurationText(leave)}</td><td>${leave.reason}</td><td>${photoBtn}</td><td><span class="badge badge-${statusClass}">${t(statusKey)}</span>${leave.unapprovedBy ? '<br><small style="color:#E53E3E;font-size:10px;">' + t('unapprovedByLabel') + ': ' + leave.unapprovedBy + '</small>' : ''}</td><td>`;
         if (leave.status === 'pending') {
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
         } else if (leave.status === 'approved' && verifyRole() === 'hr') {
@@ -1831,6 +1983,10 @@
           html += `<button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('reApprove')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button>`;
         } else if (leave.status === 'pending_md') {
           html += `<small style="color:#DD6B20;">${t('awaitingMD')}</small>`;
+        }
+        var canManage = (verifyRole() === 'hr' || verifyRole() === 'md');
+        if (canManage) {
+          html += ` <button class="btn btn-secondary btn-small" onclick="openEditLeaveModal('${leave.id}')">${t('edit')}</button> <button class="btn btn-danger btn-small" onclick="deleteLeaveHR('${leave.id}')">${t('delete')}</button>`;
         }
         html += `</td></tr>`;
       });
@@ -1966,7 +2122,7 @@
         html += `<div class="card"><h3>${t('leaveRequestsPending')}</h3><table><tr><th>${t('employee')}</th><th>${t('type')}</th><th>${t('date')}</th><th>${t('reason')}</th><th>${t('action')}</th></tr>`;
         APP.leaves.filter(l => l.status === 'pending').forEach(leave => {
           const emp = APP.employees.find(e => e.id === leave.empId);
-          html += `<tr><td>${emp ? emp.name : t('unknown')}</td><td>${leave.type}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button></td></tr>`;
+          html += `<tr><td>${emp ? emp.name : t('unknown')}</td><td>${t(leave.type)}</td><td>${leave.from}</td><td>${leave.reason}</td><td><button class="btn btn-approve btn-small" onclick="approveLeave('${leave.id}')">${t('approve')}</button> <button class="btn btn-reject btn-small" onclick="rejectLeave('${leave.id}')">${t('reject')}</button></td></tr>`;
         });
         html += '</table></div>';
       }
@@ -2113,6 +2269,8 @@
     }
 
     function deleteEmployee(id) {
+      var role = verifyRole();
+      if (role !== 'hr' && role !== 'md' && role !== 'admin') { showToast(t('accessDenied'), 'error'); return; }
       if (confirm(t('confirmDelete'))) {
         const idx = APP.employees.findIndex(e => e.id === id);
         if (idx >= 0) {
@@ -2203,6 +2361,8 @@
     }
 
     function resetEmployeePassword(empId) {
+      var role = verifyRole();
+      if (role !== 'hr' && role !== 'md' && role !== 'admin') { showToast(t('accessDenied'), 'error'); return; }
       var emp = APP.employees.find(function(e) { return e.id === empId; });
       if (!emp) return;
       if (!confirm(t('confirmResetPassword').replace('{name}', emp.name))) return;
@@ -2935,7 +3095,7 @@
       // Per-employee leave summary
       html += '<div style="flex:1; min-width:300px;">';
       html += '<h4 style="color:#1A365D; margin-bottom:8px;">' + t('employee') + '</h4>';
-      html += '<table><tr><th>' + t('employee') + '</th><th>' + t('sickLeave') + '</th><th>' + t('personalLeave') + '</th><th>' + t('annualLeave') + '</th><th>Total</th></tr>';
+      html += '<table><tr><th>' + t('employee') + '</th><th>' + t('sickLeave') + '</th><th>' + t('personalLeave') + '</th><th>' + t('annualLeave') + '</th><th>' + t('total') + '</th></tr>';
       APP.employees.forEach(function(emp) {
         var empLeaves = filteredLeaves.filter(function(l) { return l.empId === emp.id; });
         var hs = emp.histSick || 0, hp = emp.histPersonal || 0, ha = emp.histAnnual || 0;
@@ -2960,20 +3120,19 @@
         return;
       }
       var data = filtered.map(function(l) {
-        return {
-          'Employee ID': (APP.employees.find(function(e){return e.id===l.empId;}) || {}).empId || l.empId,
-          'Employee': (APP.employees.find(function(e){return e.id===l.empId;}) || {}).name || t('unknown'),
-          'Type': l.type,
-          'Mode': l.mode === 'hourly' ? 'Hourly' : 'Full Day',
-          'Start Date': l.from,
-          'End Date': l.to || l.from,
-          'Start Time': l.startTime || '',
-          'End Time': l.endTime || '',
-          'Duration': l.durationText || '',
-          'Status': l.status,
-          'Reason': l.reason,
-          'Photos': l.photos ? l.photos.length : 0
-        };
+        var obj = {};
+        obj[t('employeeId')] = (APP.employees.find(function(e){return e.id===l.empId;}) || {}).empId || l.empId;
+        obj[t('employee')] = (APP.employees.find(function(e){return e.id===l.empId;}) || {}).name || t('unknown');
+        obj[t('type')] = t(l.type);
+        obj[t('leaveMode')] = l.mode === 'hourly' ? t('hourly') : t('fullDay');
+        obj[t('from')] = l.from;
+        obj[t('to')] = l.to || l.from;
+        obj[t('startTime')] = l.startTime || '';
+        obj[t('endTime')] = l.endTime || '';
+        obj[t('duration')] = getLeaveDurationText(l);
+        obj[t('status')] = t(l.status);
+        obj[t('reason')] = l.reason;
+        return obj;
       });
       downloadCSV('leave_report_' + dates.from + '_to_' + dates.to + '.csv', data);
       addLog('report_download', 'Leave report downloaded (' + dates.from + ' to ' + dates.to + ')');
@@ -2987,15 +3146,15 @@
         return;
       }
       var data = filtered.map(function(ot) {
-        return {
-          'Employee ID': (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).empId || ot.empId,
-          'Employee': (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).name || t('unknown'),
-          'Date': ot.date,
-          'Start': ot.startTime,
-          'End': ot.endTime,
-          'Status': ot.status,
-          'Reason': ot.reason
-        };
+        var obj = {};
+        obj[t('employeeId')] = (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).empId || ot.empId;
+        obj[t('employee')] = (APP.employees.find(function(e){return e.id===ot.empId;}) || {}).name || t('unknown');
+        obj[t('date')] = ot.date;
+        obj[t('startTime')] = ot.startTime;
+        obj[t('endTime')] = ot.endTime;
+        obj[t('status')] = t(ot.status);
+        obj[t('reason')] = ot.reason;
+        return obj;
       });
       downloadCSV('ot_report_' + dates.from + '_to_' + dates.to + '.csv', data);
       addLog('report_download', 'OT report downloaded (' + dates.from + ' to ' + dates.to + ')');
@@ -3024,18 +3183,18 @@
 
       var data = filtered.map(function(a) {
         var emp = APP.employees.find(function(e) { return e.id === a.empId; });
-        return {
-          'Employee ID': emp ? (emp.empId || '') : a.fingerprintId || '',
-          'Fingerprint ID': a.fingerprintId || '',
-          'Employee': a.empName || (emp ? emp.name : ''),
-          'Date': a.date,
-          'Shift': a.shift || '',
-          'Shift Start': a.shiftStart || '',
-          'Check-in': a.checkIn || '',
-          'Check-out': a.checkOut || '',
-          'Status': a.status,
-          'Late (min)': a.lateMinutes || 0
-        };
+        var obj = {};
+        obj[t('employeeId')] = emp ? (emp.empId || '') : a.fingerprintId || '';
+        obj[t('fingerprintId')] = a.fingerprintId || '';
+        obj[t('employee')] = a.empName || (emp ? emp.name : '');
+        obj[t('date')] = a.date;
+        obj[t('shift')] = a.shift || '';
+        obj[t('shiftTime')] = a.shiftStart || '';
+        obj[t('checkIn')] = a.checkIn || '';
+        obj[t('checkOut')] = a.checkOut || '';
+        obj[t('status')] = a.status === 'late' ? t('late') : (a.status === 'ontime' ? t('ontime') : a.status);
+        obj[t('lateBy') + ' (' + t('minutes') + ')'] = a.lateMinutes || 0;
+        return obj;
       });
       var prefix = mode === 'individual' ? 'attendance_individual_' : 'attendance_all_';
       downloadCSV(prefix + from + '_to_' + to + '.csv', data);
@@ -3058,19 +3217,20 @@
       });
 
       var data = [];
+      var timesLateKey = t('lateThisMonth');
       Object.keys(empMap).forEach(function(eid) {
         var emp = APP.employees.find(function(e) { return e.id === eid; });
-        data.push({
-          'Employee ID': emp ? (emp.empId || '') : '',
-          'Employee': emp ? emp.name : eid,
-          'Department': emp ? emp.dept : '',
-          'Times Late': empMap[eid].count,
-          'Total Late Minutes': empMap[eid].totalMin,
-          'Average Late (min)': Math.round(empMap[eid].totalMin / empMap[eid].count),
-          'Dates Late': empMap[eid].dates.join('; ')
-        });
+        var obj = {};
+        obj[t('employeeId')] = emp ? (emp.empId || '') : '';
+        obj[t('employee')] = emp ? emp.name : eid;
+        obj[t('department')] = emp ? emp.dept : '';
+        obj[timesLateKey] = empMap[eid].count;
+        obj[t('total') + ' ' + t('late') + ' (' + t('minutes') + ')'] = empMap[eid].totalMin;
+        obj[t('lateBy') + ' (' + t('minutes') + ')'] = Math.round(empMap[eid].totalMin / empMap[eid].count);
+        obj[t('date')] = empMap[eid].dates.join('; ');
+        data.push(obj);
       });
-      data.sort(function(a, b) { return b['Times Late'] - a['Times Late']; });
+      data.sort(function(a, b) { return b[timesLateKey] - a[timesLateKey]; });
       downloadCSV('late_summary_' + from + '_to_' + to + '.csv', data);
       addLog('report_download', 'Late summary report downloaded (' + from + ' to ' + to + ')');
     }
@@ -3079,16 +3239,16 @@
       var dates = getReportDates();
       var filtered = filterByDateRange(APP.logs, 'ts', dates.from, dates.to);
       if (filtered.length === 0) {
-        showToast('No activity data in selected range', 'error');
+        showToast(t('noData'), 'error');
         return;
       }
       var data = filtered.map(function(log) {
-        return {
-          'Timestamp': log.ts,
-          'User': log.user,
-          'Action': log.action,
-          'Detail': log.detail
-        };
+        var obj = {};
+        obj[t('timestamp')] = log.ts;
+        obj[t('user')] = log.user;
+        obj[t('action')] = log.action;
+        obj[t('detail')] = log.detail;
+        return obj;
       });
       downloadCSV('activity_log_' + dates.from + '_to_' + dates.to + '.csv', data);
     }
@@ -3913,24 +4073,24 @@
         var emp = APP.employees.find(function(e) { return e.id === d.empId; });
         var reporter = APP.employees.find(function(e) { return e.id === d.reportedBy; });
         var stepInfo = DISCIPLINARY_STEPS.find(function(s) { return s.step === d.step; });
-        return {
-          'Report ID': d.id,
-          'Employee ID': emp ? (emp.empId || emp.id) : d.empId,
-          'Employee Name': emp ? emp.name : d.empId,
-          'Department': emp ? emp.dept : '-',
-          'Section': emp ? (emp.section || '-') : '-',
-          'Incident Date': d.incidentDate || '-',
-          'Severity Code': d.severityCode || '-',
-          'Incident Type': d.incidentType ? t(d.incidentType) : '-',
-          'Offense Track': d.offenseTrack ? getTrackLabel(d.offenseTrack) : '-',
-          'Disciplinary Step': stepInfo ? t(stepInfo.key) : (d.severityCode === '90' ? t('customerCompliment') : (d.offenseTrack === 'none' ? t('noOffense') : '-')),
-          'Description': d.description || '',
-          'Reported By': d.reportedByName || (reporter ? reporter.name : '-'),
-          'Status': d.status || '-',
-          'Approved By': d.approvedByName || '-',
-          'Acknowledged': d.acceptedAt ? (d.acceptedBy + ' (' + new Date(d.acceptedAt).toLocaleDateString() + ')') : '-',
-          'Created At': d.createdAt ? new Date(d.createdAt).toLocaleString() : '-'
-        };
+        var obj = {};
+        obj['ID'] = d.id;
+        obj[t('employeeId')] = emp ? (emp.empId || emp.id) : d.empId;
+        obj[t('employee')] = emp ? emp.name : d.empId;
+        obj[t('department')] = emp ? emp.dept : '-';
+        obj[t('section')] = emp ? (emp.section || '-') : '-';
+        obj[t('incidentDate')] = d.incidentDate || '-';
+        obj[t('severityCode')] = d.severityCode || '-';
+        obj[t('incidentType')] = d.incidentType ? t(d.incidentType) : '-';
+        obj[t('offenseTrack')] = d.offenseTrack ? getTrackLabel(d.offenseTrack) : '-';
+        obj[t('disciplinaryStep')] = stepInfo ? t(stepInfo.key) : (d.severityCode === '90' ? t('customerCompliment') : (d.offenseTrack === 'none' ? t('noOffense') : '-'));
+        obj[t('incidentDescription')] = d.description || '';
+        obj[t('reportedBy')] = d.reportedByName || (reporter ? reporter.name : '-');
+        obj[t('status')] = d.status ? t(d.status) : '-';
+        obj[t('approvedBy')] = d.approvedByName || '-';
+        obj[t('acknowledged')] = d.acceptedAt ? (d.acceptedBy + ' (' + new Date(d.acceptedAt).toLocaleDateString() + ')') : '-';
+        obj[t('timestamp')] = d.createdAt ? new Date(d.createdAt).toLocaleString() : '-';
+        return obj;
       });
       var empName = '';
       if (empFilter && empFilter !== 'all') {
